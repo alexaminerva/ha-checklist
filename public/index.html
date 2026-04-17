@@ -411,8 +411,7 @@ Notes:
     applyListing(parsed);
   } catch(e) {
     console.error(e);
-    setStatus(false);
-    el('detect-label').textContent = 'Could not read listing — please fill in the details manually';
+    el('detect-label').textContent = 'Could not read listing — using URL details only';
   }
 }
 
@@ -432,7 +431,6 @@ function applyListing(d) {
     if (on) ct++;
   }
   if (ct > 0) { el('detect-banner').style.display='block'; el('detect-label').textContent = `${ct} feature${ct!==1?'s':''} detected`; }
-  setStatus(false);
 }
 
 // ── MOVE DATE → MONTH ──────────────────────────────────
@@ -460,6 +458,11 @@ function distToTiming(mo) {
 
 // ── GENERATE ───────────────────────────────────────────
 async function generate() {
+  // If there's a URL but no address yet, fetch first automatically
+  if (val('listing-url') && !val('address') && !val('city')) {
+    await fetchFromUrl();
+  }
+
   const address = val('address'), city = val('city'), yearBuilt = val('year-built');
   const sqft = val('sqft'), homeType = val('home-type')||'Single Family Home';
   const moveDate = val('move-date')||'today';
@@ -470,7 +473,8 @@ async function generate() {
   const features = Object.values(FEAT_MAP).filter(id=>el(id).checked).map(id=>el(id).value);
   const customTasks = getCustomTasks();
 
-  if (!address && !city) { alert('Enter an address or paste a listing URL first.'); return; }
+  const finalAddress = val('address'), finalCity = val('city');
+  if (!finalAddress && !finalCity && !val('listing-url')) { alert('Enter an address or paste a listing URL first.'); return; }
 
   const age = yearBuilt ? new Date().getFullYear() - parseInt(yearBuilt) : null;
 
