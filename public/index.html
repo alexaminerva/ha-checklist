@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Home Maintenance Checklist — HouseAccount</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1C3A4A;--blue:#6B9FBF;--light-bg:#EEF4F8;--white:#FFFFFF;--border:#C8DBE6;--text:#1C2E38;--muted:#6B8A99;--success:#2E7D52}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--light-bg);color:var(--text);min-height:100vh}
+.topbar{background:var(--navy);padding:14px 32px;display:flex;align-items:center;justify-content:space-between}
+.topbar img{height:26px}
+.topbar-label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--blue);font-weight:500}
+.main{max-width:780px;margin:0 auto;padding:36px 24px 80px}
+.hero{margin-bottom:32px}
+.hero h1{font-family:'DM Serif Display',serif;font-size:30px;color:var(--navy);line-height:1.2;margin-bottom:8px}
+.hero p{font-size:15px;color:var(--muted);line-height:1.6}
+.card{background:var(--white);border-radius:14px;border:1px solid var(--border);padding:26px 30px;margin-bottom:18px}
+.card-title{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--blue);margin-bottom:18px}
+label{display:block;font-size:13px;font-weight:500;color:var(--navy);margin-bottom:6px}
+input[type="text"],input[type="url"],select,textarea{width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 13px;font-size:14px;font-family:inherit;color:var(--text);background:#FAFCFE;transition:border-color .15s;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--blue);background:var(--white)}
+.field{margin-bottom:16px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.input-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:flex-end}
+.or-div{text-align:center;font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin:20px 0;display:flex;align-items:center;gap:12px}
+.or-div::before,.or-div::after{content:'';flex:1;height:1px;background:var(--border)}
+.feature-tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:6px}
+.ftag{display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border:1.5px solid var(--border);border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;transition:all .12s;user-select:none}
+.ftag:hover{border-color:var(--blue);background:var(--light-bg)}
+.ftag input{accent-color:var(--navy)}
+.ftag.detected{border-color:var(--blue);background:#EEF4F8}
+.detect-banner{background:#F0F8F2;border:1.5px solid #7DC78A;border-radius:10px;padding:11px 16px;margin-bottom:12px;font-size:13px;color:#1E5E2A;display:none}
+.custom-row{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;margin-bottom:8px}
+.custom-row input{margin-bottom:0}
+.csel{width:auto;padding:9px 10px;font-size:12px}
+.rm-btn{width:32px;height:38px;border:1.5px solid var(--border);border-radius:7px;background:transparent;cursor:pointer;font-size:16px;color:var(--muted);display:flex;align-items:center;justify-content:center;transition:all .12s;flex-shrink:0}
+.rm-btn:hover{border-color:#E24B4A;color:#E24B4A;background:#FFF5F5}
+.add-btn{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--navy);background:none;border:1.5px dashed var(--border);border-radius:8px;padding:8px 16px;cursor:pointer;font-family:inherit;transition:all .12s;width:100%;justify-content:center;margin-top:4px}
+.add-btn:hover{border-color:var(--blue);color:var(--blue);background:var(--light-bg)}
+.saved-banner{background:var(--light-bg);border:1.5px solid var(--blue);border-radius:12px;padding:14px 18px;align-items:center;gap:12px;margin-bottom:18px;display:none}
+.s-av{width:42px;height:42px;border-radius:50%;background:var(--navy);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;color:#fff;flex-shrink:0;overflow:hidden}
+.s-av img{width:100%;height:100%;object-fit:cover}
+.s-body{flex:1}
+.s-name{font-size:14px;font-weight:600;color:var(--navy)}
+.s-sub{font-size:12px;color:var(--muted);margin-top:1px}
+.s-acts{display:flex;gap:8px}
+.lbtn{background:none;border:none;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;padding:4px 0;text-decoration:underline;text-underline-offset:2px}
+.lbtn.e{color:var(--navy)}.lbtn.c{color:var(--muted)}
+.agent-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.logo-drop{border:2px dashed var(--border);border-radius:10px;padding:18px;text-align:center;cursor:pointer;transition:all .15s;background:#FAFCFE}
+.logo-drop:hover{border-color:var(--blue);background:var(--light-bg)}
+.logo-drop p{font-size:12px;color:var(--muted);margin-top:6px}
+#logo-preview{max-height:48px;max-width:100%;display:none;margin:0 auto}
+#logo-input{display:none}
+.save-row{display:flex;align-items:center;justify-content:space-between;margin-top:6px}
+.saved-flash{font-size:12px;color:var(--success);font-weight:500;opacity:0;transition:opacity .3s;display:flex;align-items:center;gap:5px}
+.saved-flash.show{opacity:1}
+.btn{background:var(--navy);color:#fff;border:none;border-radius:8px;padding:11px 22px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:background .15s,transform .1s;display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+.btn:hover{background:#253f50}.btn:active{transform:scale(.98)}.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-outline{background:transparent;border:1.5px solid var(--navy);color:var(--navy)}.btn-outline:hover{background:var(--light-bg)}
+.btn-sm{padding:8px 15px;font-size:13px}
+.btn-gen{width:100%;justify-content:center;padding:15px;font-size:15px;margin-top:4px}
+.status-bar{background:var(--light-bg);border:1px solid var(--border);border-radius:10px;padding:13px 17px;font-size:13px;color:var(--muted);display:none;align-items:center;gap:10px;margin-bottom:18px}
+.spin{width:15px;height:15px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+#output{display:none;margin-top:28px}
+.out-hdr{background:var(--navy);color:#fff;border-radius:14px 14px 0 0;padding:24px 28px 20px;position:relative;overflow:hidden}
+.out-hdr::before{content:'';position:absolute;top:-40px;right:-40px;width:150px;height:150px;border-radius:50%;background:rgba(107,159,191,.1)}
+.brand-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,.12)}
+.agent-info{display:flex;align-items:center;gap:10px}
+#out-logo{max-height:34px;max-width:130px;border-radius:4px;display:none}
+#out-agent{font-size:13px;color:rgba(255,255,255,.85);font-weight:500}
+.ha-mark{display:flex;align-items:center;gap:7px}
+.ha-mark img{height:18px;opacity:.85}
+.ha-mark span{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--blue)}
+.out-hdr h2{font-family:'DM Serif Display',serif;font-size:22px;margin-bottom:4px}
+.out-hdr p{font-size:13px;color:rgba(255,255,255,.65)}
+.meta-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.meta-chip{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:4px 12px;font-size:11px;color:rgba(255,255,255,.85);font-weight:500}
+.out-body{background:#fff;border:1px solid var(--border);border-top:none;border-radius:0 0 14px 14px;overflow:hidden}
+.sec-block{border-bottom:1px solid var(--border)}.sec-block:last-child{border-bottom:none}
+.sec-hdr{display:flex;align-items:center;gap:10px;padding:16px 22px;background:var(--light-bg);cursor:pointer;user-select:none;transition:background .15s}
+.sec-hdr:hover{background:#E4EFF6}
+.sec-icon{width:34px;height:34px;border-radius:8px;background:var(--navy);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.sec-title{font-weight:600;font-size:13px;color:var(--navy);flex:1}
+.sec-ct{font-size:11px;font-weight:600;color:#185FA5;background:#DFF0F8;border-radius:20px;padding:3px 9px}
+.chev{font-size:11px;color:var(--muted);transition:transform .2s}.chev.open{transform:rotate(180deg)}
+.sec-items{display:none}.sec-items.open{display:block}
+.chk-item{display:flex;align-items:flex-start;gap:12px;padding:11px 22px;border-bottom:1px solid #F0F6FA;transition:background .1s}
+.chk-item:last-child{border-bottom:none}.chk-item:hover{background:#FAFCFE}
+.chk-box{width:19px;height:19px;border:1.5px solid var(--border);border-radius:5px;flex-shrink:0;margin-top:2px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.chk-box.checked{background:var(--navy);border-color:var(--navy)}.chk-box.checked::after{content:'✓';color:#fff;font-size:11px;font-weight:700}
+.chk-body{flex:1}
+.chk-title{font-size:13px;font-weight:500;color:var(--text)}
+.chk-desc{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.5}
+.tbadge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0;align-self:flex-start;margin-top:2px}
+.t-now{background:#FEE2E2;color:#B91C1C}
+.t-soon{background:#EDE9FE;color:#5B21B6}
+.t-mid{background:#FEF3C7;color:#854F0B}
+.t-ann{background:#DCFCE7;color:#14532D}
+.t-cust{background:#EEF4F8;color:#1C3A4A}
+.out-actions{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
+@media print{
+  body{background:#fff}
+  .topbar,.hero,.card,.out-actions,.status-bar{display:none!important}
+  #output{display:block!important}
+  .sec-items{display:block!important}
+  .sec-hdr{cursor:default;background:#EEF4F8!important}
+  .chev{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:10px">
+    <img src="data:image/png;base64,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" alt="HouseAccount">
+    <span class="topbar-label">Partner Portal</span>
+  </div>
+</div>
+
+<div class="main">
+  <div class="hero">
+    <h1>Year 1 Home Maintenance<br>Checklist Generator</h1>
+    <p>Paste a listing URL — we detect property details and build a time-aware checklist based on when the homeowner moves in.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Property Details</div>
+    <div class="field">
+      <label>Listing URL <span style="color:var(--muted);font-weight:400">(Zillow, Redfin, Realtor.com)</span></label>
+      <div class="input-row">
+        <input type="url" id="listing-url" placeholder="https://www.zillow.com/homedetails/...">
+        <button class="btn btn-outline btn-sm" onclick="fetchFromUrl()" id="fetch-btn">Pull Details →</button>
+      </div>
+    </div>
+    <div class="or-div">or enter manually</div>
+    <div class="grid-2">
+      <div class="field"><label>Street Address</label><input type="text" id="address" placeholder="e.g. 124 Maple St"></div>
+      <div class="field"><label>City, State</label><input type="text" id="city" placeholder="e.g. Greenwich, CT"></div>
+    </div>
+    <div class="grid-2">
+      <div class="field"><label>Year Built</label><input type="text" id="year-built" placeholder="e.g. 1998"></div>
+      <div class="field"><label>Square Footage</label><input type="text" id="sqft" placeholder="e.g. 2,400"></div>
+    </div>
+    <div class="grid-2">
+      <div class="field">
+        <label>Property Type</label>
+        <select id="home-type">
+          <option value="">Select…</option>
+          <option>Single Family Home</option>
+          <option>Townhouse</option>
+          <option>Condo</option>
+          <option>Multi-Family</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Move-in / Close Date <span style="color:var(--muted);font-weight:400">(for timing)</span></label>
+        <input type="text" id="move-date" placeholder="e.g. July 2025  or  leave blank for today">
+      </div>
+    </div>
+    <div class="field">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <label style="margin:0">Special Features</label>
+        <span id="detect-label" style="font-size:11px;color:var(--muted)">Auto-detected from listing, or select manually</span>
+      </div>
+      <div class="detect-banner" id="detect-banner">✓ Features detected from listing — confirm below and add anything missing.</div>
+      <div class="feature-tags">
+        <label class="ftag" for="f-pool"><input type="checkbox" id="f-pool" value="Pool"> 🏊 Pool</label>
+        <label class="ftag" for="f-spa"><input type="checkbox" id="f-spa" value="Spa/Hot Tub"> 🛁 Spa</label>
+        <label class="ftag" for="f-deck"><input type="checkbox" id="f-deck" value="Deck or Patio"> 🪵 Deck/Patio</label>
+        <label class="ftag" for="f-fp"><input type="checkbox" id="f-fp" value="Fireplace"> 🔥 Fireplace</label>
+        <label class="ftag" for="f-bsmt"><input type="checkbox" id="f-bsmt" value="Basement"> 🏗 Basement</label>
+        <label class="ftag" for="f-gar"><input type="checkbox" id="f-gar" value="Attached Garage"> 🚗 Garage</label>
+        <label class="ftag" for="f-well"><input type="checkbox" id="f-well" value="Well Water"> 💧 Well Water</label>
+        <label class="ftag" for="f-sep"><input type="checkbox" id="f-sep" value="Septic System"> 🌿 Septic</label>
+        <label class="ftag" for="f-sol"><input type="checkbox" id="f-sol" value="Solar Panels"> ☀️ Solar</label>
+        <label class="ftag" for="f-ev"><input type="checkbox" id="f-ev" value="EV Charger"> ⚡ EV Charger</label>
+        <label class="ftag" for="f-irr"><input type="checkbox" id="f-irr" value="Lawn & Irrigation"> 🌱 Irrigation</label>
+        <label class="ftag" for="f-sl"><input type="checkbox" id="f-sl" value="Slate/Tile Roof"> 🏛 Slate Roof</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Custom Tasks <span style="font-weight:400;font-size:11px;color:var(--muted);text-transform:none;letter-spacing:0">— optional additions to the checklist</span></div>
+    <div id="custom-list"></div>
+    <button class="add-btn" onclick="addCustomRow()">+ Add a custom task</button>
+  </div>
+
+  <div class="saved-banner" id="saved-banner">
+    <div class="s-av" id="s-av"></div>
+    <div class="s-body"><div class="s-name" id="s-name"></div><div class="s-sub" id="s-sub"></div></div>
+    <div class="s-acts">
+      <button class="lbtn e" onclick="editProfile()">Edit</button>
+      <button class="lbtn c" onclick="clearProfile()">Clear</button>
+    </div>
+  </div>
+
+  <div class="card" id="branding-card">
+    <div class="card-title">Your Branding</div>
+    <div class="agent-row">
+      <div>
+        <div class="field"><label>Your Name</label><input type="text" id="agent-name" placeholder="e.g. Sarah Chen"></div>
+        <div class="field"><label>Brokerage</label><input type="text" id="agent-brokerage" placeholder="e.g. Compass Real Estate"></div>
+        <div class="field"><label>Phone / Email</label><input type="text" id="agent-phone" placeholder="e.g. (203) 555-0142"></div>
+      </div>
+      <div>
+        <label>Your Logo <span style="color:var(--muted);font-weight:400">(optional)</span></label>
+        <div class="logo-drop" onclick="document.getElementById('logo-input').click()">
+          <div style="font-size:20px">🖼</div>
+          <img id="logo-preview" src="" alt="">
+          <p id="upload-label">Click to upload<br><span style="font-size:11px">PNG or JPG</span></p>
+        </div>
+        <input type="file" id="logo-input" accept="image/*" onchange="previewLogo(event)">
+      </div>
+    </div>
+    <div class="save-row">
+      <button class="btn btn-outline btn-sm" onclick="saveProfile()">💾 Save branding</button>
+      <div class="saved-flash" id="saved-flash"><span style="width:7px;height:7px;background:var(--success);border-radius:50%;display:inline-block"></span> Saved — auto-fills next visit</div>
+    </div>
+  </div>
+
+  <div class="status-bar" id="status-bar"><div class="spin"></div><span id="status-txt">Analyzing…</span></div>
+  <button class="btn btn-gen" onclick="generate()" id="gen-btn">Generate Checklist →</button>
+
+  <div id="output">
+    <div class="out-hdr">
+      <div class="brand-row">
+        <div class="agent-info">
+          <img id="out-logo" src="" alt="">
+          <div id="out-agent"></div>
+        </div>
+        <div class="ha-mark">
+          <span>Powered by</span>
+          <img src="data:image/png;base64,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" alt="HouseAccount">
+        </div>
+      </div>
+      <h2 id="out-title">Year 1 Home Maintenance Checklist</h2>
+      <p id="out-addr"></p>
+      <div class="meta-chips" id="out-meta"></div>
+    </div>
+    <div class="out-body" id="out-body"></div>
+    <div class="out-actions">
+      <button class="btn" onclick="window.print()">🖨 Print / Save PDF</button>
+      <button class="btn btn-outline" onclick="resetForm()">← New Checklist</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const PKEY = 'ha_agent_v2';
+let agentLogo = null;
+let cid = 0;
+
+// ── UTILS ──────────────────────────────────────────────
+const el = id => document.getElementById(id);
+const val = id => (el(id)||{}).value?.trim()||'';
+
+function setStatus(on, txt='') {
+  el('status-bar').style.display = on ? 'flex' : 'none';
+  el('status-txt').textContent = txt;
+  el('gen-btn').disabled = on;
+  el('fetch-btn').disabled = on;
+}
+
+// ── PROFILE ────────────────────────────────────────────
+function saveProfile() {
+  const p = { name:val('agent-name'), brokerage:val('agent-brokerage'), phone:val('agent-phone'), logo:agentLogo||null };
+  if (!p.name && !p.brokerage) { alert('Enter your name first.'); return; }
+  localStorage.setItem(PKEY, JSON.stringify(p));
+  el('saved-flash').classList.add('show');
+  setTimeout(()=>el('saved-flash').classList.remove('show'), 3000);
+  showBanner(p);
+}
+
+function loadProfile() {
+  try {
+    const p = JSON.parse(localStorage.getItem(PKEY));
+    if (!p) return;
+    if (p.name) el('agent-name').value = p.name;
+    if (p.brokerage) el('agent-brokerage').value = p.brokerage;
+    if (p.phone) el('agent-phone').value = p.phone;
+    if (p.logo) { agentLogo = p.logo; el('logo-preview').src = p.logo; el('logo-preview').style.display='block'; el('upload-label').style.display='none'; }
+    showBanner(p);
+  } catch(e){}
+}
+
+function showBanner(p) {
+  if (!p.name && !p.brokerage) return;
+  const av = el('s-av');
+  av.innerHTML = p.logo ? `<img src="${p.logo}" alt="">` : ((p.name||p.brokerage||'?').split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase());
+  el('s-name').textContent = p.name || p.brokerage;
+  el('s-sub').textContent = [p.brokerage, p.phone].filter(Boolean).join(' · ') || 'Branding saved';
+  el('saved-banner').style.display = 'flex';
+  el('branding-card').style.display = 'none';
+}
+
+function editProfile() { el('saved-banner').style.display='none'; el('branding-card').style.display='block'; }
+function clearProfile() {
+  localStorage.removeItem(PKEY); agentLogo = null;
+  ['agent-name','agent-brokerage','agent-phone'].forEach(id=>el(id).value='');
+  el('logo-preview').style.display='none'; el('upload-label').style.display='block';
+  el('saved-banner').style.display='none'; el('branding-card').style.display='block';
+}
+
+function previewLogo(e) {
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ev => { agentLogo=ev.target.result; el('logo-preview').src=agentLogo; el('logo-preview').style.display='block'; el('upload-label').style.display='none'; };
+  r.readAsDataURL(f);
+}
+
+// ── CUSTOM TASKS ───────────────────────────────────────
+function addCustomRow(title='', timing='now') {
+  const id = ++cid;
+  const row = document.createElement('div');
+  row.className = 'custom-row'; row.id = `cr${id}`;
+  row.innerHTML = `
+    <input type="text" id="ct${id}" placeholder="e.g. Get a home warranty quote" value="${title}">
+    <select class="csel" id="cs${id}">
+      <option value="now" ${timing==='now'?'selected':''}>First 30 days</option>
+      <option value="soon" ${timing==='soon'?'selected':''}>1–3 months</option>
+      <option value="mid" ${timing==='mid'?'selected':''}>3–6 months</option>
+      <option value="annual" ${timing==='annual'?'selected':''}>Annual</option>
+    </select>
+    <button class="rm-btn" onclick="el('cr${id}').remove()">×</button>`;
+  el('custom-list').appendChild(row);
+}
+
+function getCustomTasks() {
+  return Array.from(el('custom-list').querySelectorAll('.custom-row')).map(row => {
+    const id = row.id.replace('cr','');
+    return { title: val(`ct${id}`), timing: el(`cs${id}`).value };
+  }).filter(t => t.title);
+}
+
+// ── URL FETCH ──────────────────────────────────────────
+async function fetchFromUrl() {
+  const url = val('listing-url'); if(!url) return;
+  setStatus(true, 'Reading listing page…');
+  let text = `Listing URL: ${url}`;
+  try {
+    const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
+    const d = await r.json();
+    text = (d.contents||'').replace(/<script[\s\S]*?<\/script>/gi,'').replace(/<style[\s\S]*?<\/style>/gi,'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').slice(0,6000);
+  } catch(e){}
+
+  setStatus(true, 'Extracting property details…');
+  const prompt = `Extract property details from this listing text. Return ONLY valid JSON, nothing else.
+
+Text: ${text}
+
+Return:
+{
+  "address": "street only",
+  "city": "City, ST",
+  "yearBuilt": "YYYY or null",
+  "sqft": "number only or null",
+  "homeType": "Single Family Home|Condo|Townhouse|Multi-Family",
+  "climate": "cold_snowy|hot_humid|hot_dry|temperate",
+  "features": {"pool":bool,"spa":bool,"deck":bool,"fireplace":bool,"basement":bool,"garage":bool,"well":bool,"septic":bool,"solar":bool,"ev":bool,"irrigation":bool,"slate":bool}
+}
+Climate: CT/NY/MA/NJ/PA/IL/MN/OH/MI/CO/WI = cold_snowy. TX/FL/GA/LA/SC/AL/MS = hot_humid. AZ/NV/NM/UT/CA-inland = hot_dry. OR/WA/CA-coast/MD/VA/NC/TN = temperate.`;
+
+  try {
+    const data = await callClaude(prompt, 500);
+    const raw = data.content[0].text;
+    const parsed = JSON.parse(raw.slice(raw.indexOf('{'), raw.lastIndexOf('}')+1));
+    applyListing(parsed);
+  } catch(e) {
+    console.error(e);
+    setStatus(false);
+    el('detect-label').textContent = 'Auto-detect failed — please fill in manually';
+  }
+}
+
+const FEAT_MAP = {pool:'f-pool',spa:'f-spa',deck:'f-deck',fireplace:'f-fp',basement:'f-bsmt',garage:'f-gar',well:'f-well',septic:'f-sep',solar:'f-sol',ev:'f-ev',irrigation:'f-irr',slate:'f-sl'};
+
+function applyListing(d) {
+  if (d.address) el('address').value = d.address;
+  if (d.city) el('city').value = d.city;
+  if (d.yearBuilt) el('year-built').value = d.yearBuilt;
+  if (d.sqft) el('sqft').value = Number((d.sqft+'').replace(/\D/g,'')).toLocaleString();
+  if (d.homeType) { for (let o of el('home-type').options) if(o.value===d.homeType) el('home-type').value=d.homeType; }
+  let ct = 0;
+  for (const [k, id] of Object.entries(FEAT_MAP)) {
+    const on = !!(d.features && d.features[k]);
+    el(id).checked = on;
+    el(id).closest('.ftag').classList.toggle('detected', on);
+    if (on) ct++;
+  }
+  if (ct > 0) { el('detect-banner').style.display='block'; el('detect-label').textContent = `${ct} feature${ct!==1?'s':''} detected`; }
+  setStatus(false);
+}
+
+// ── MOVE DATE → MONTH ──────────────────────────────────
+function getMoveMonth() {
+  const raw = val('move-date');
+  if (!raw) return new Date().getMonth();
+  const d = new Date(raw);
+  if (!isNaN(d.getTime())) return d.getMonth();
+  const names = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+  const l = raw.toLowerCase();
+  for (let i=0; i<names.length; i++) if(l.includes(names[i])) return i;
+  return new Date().getMonth();
+}
+
+// monthsBetween: how many months forward from moveM to reach targetM (0–11)
+function monthsAway(moveM, targetM) { return ((targetM - moveM) + 12) % 12; }
+
+// Convert months-away distance to timing bucket
+function distToTiming(mo) {
+  if (mo === 0) return 'now';
+  if (mo <= 2)  return 'soon';
+  if (mo <= 5)  return 'mid';
+  return 'annual';
+}
+
+// ── GENERATE ───────────────────────────────────────────
+async function generate() {
+  const address = val('address'), city = val('city'), yearBuilt = val('year-built');
+  const sqft = val('sqft'), homeType = val('home-type')||'Single Family Home';
+  const moveDate = val('move-date')||'today';
+  const moveMonth = getMoveMonth();
+  const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const moveMonthName = MONTH_NAMES[moveMonth];
+
+  const features = Object.values(FEAT_MAP).filter(id=>el(id).checked).map(id=>el(id).value);
+  const customTasks = getCustomTasks();
+
+  if (!address && !city) { alert('Enter an address or paste a listing URL first.'); return; }
+
+  const age = yearBuilt ? new Date().getFullYear() - parseInt(yearBuilt) : null;
+
+  // Pre-compute timing for common seasonal tasks so the prompt is explicit
+  const winterizeMonth = 9; // October ideal for winterizing irrigation
+  const gutterMonth = 9;    // October for gutter cleaning
+  const acCheckMonth = 4;   // May for AC check
+  const chimneySweepMonth = moveMonth <= 8 ? 8 : moveMonth; // Before heating season
+
+  setStatus(true, 'Building your personalized checklist…');
+
+  const prompt = `You are a home maintenance expert. Generate a focused Year 1 checklist: 18–22 tasks total.
+
+PROPERTY:
+- ${address||'address unknown'}, ${city||'city unknown'}
+- ${homeType}${age ? `, built ${yearBuilt} (${age} years old)` : ''}
+- ${sqft ? sqft+' sq ft' : ''}
+- Move-in month: ${moveMonthName} (month index ${moveMonth}, 0=January)
+- Features: ${features.length ? features.join(', ') : 'standard'}
+
+TIMING RULES:
+Assign each task a timing value based on the move-in month of ${moveMonthName}.
+- "now" = do in first 30 days
+- "soon" = 1–3 months from move-in
+- "mid" = 3–6 months from move-in  
+- "annual" = recurring yearly task, or more than 6 months away
+
+For geographic seasonal tasks, calculate the ideal calendar month for that task, then figure out how many months away it is from ${moveMonthName}:
+- Winterize irrigation: ideally October. That is ${monthsAway(moveMonth, winterizeMonth)} months away from ${moveMonthName}, so timing = "${distToTiming(monthsAway(moveMonth, winterizeMonth))}"
+- Clean gutters: ideally October. ${monthsAway(moveMonth, gutterMonth)} months away = "${distToTiming(monthsAway(moveMonth, gutterMonth))}"
+- AC tune-up: ideally May. ${monthsAway(moveMonth, acCheckMonth)} months away = "${distToTiming(monthsAway(moveMonth, acCheckMonth))}"
+Use this same logic for all other seasonal tasks. Never say "in October" — just use the timing bucket.
+
+TIER 1 — Include ALL of these, timing = "now":
+- Change all locks and garage codes
+- Test smoke and CO detectors, replace batteries
+- Locate and label main water, gas, and electrical shutoffs
+- Replace all HVAC air filter(s)
+- Run every faucet and check under sinks for leaks
+
+TIER 2 — Geographic (4–5 tasks, based on climate of ${city||'this location'}):
+Include seasonal tasks appropriate to this region. Use the timing calculation above to assign the right bucket.
+
+TIER 3 — Age-based (2–3 tasks, only if age is known):
+${age===null ? 'Skip — age unknown' : age < 5 ? 'New home: register appliances with manufacturers, review builder warranty terms, inspect for settling cracks' : age < 20 ? 'Mid-age home: confirm roof condition and estimated remaining life, check HVAC service history, inspect water heater age' : 'Older home: check for outdated plumbing or wiring, inspect foundation, consider sewer line scope'}
+
+TIER 4 — Amenity sections (one section per feature, 2–3 tasks each, only for detected features):
+${features.length ? features.join(', ') : 'none'}
+For amenities with seasonal tasks (pool closing, fireplace before winter), apply the timing calculation.
+
+Return ONLY valid JSON:
+{
+  "sections": [
+    {
+      "title": "section name",
+      "icon": "single emoji",
+      "items": [
+        {"title": "concise task", "description": "one specific sentence for this property", "timing": "now|soon|mid|annual"}
+      ]
+    }
+  ]
+}
+
+Be specific to this property — mention the city, climate, home age, specific systems where relevant.`;
+
+  try {
+    const data = await callClaude(prompt, 1800);
+    const raw = data.content[0].text;
+    const parsed = JSON.parse(raw.slice(raw.indexOf('{'), raw.lastIndexOf('}')+1));
+    setStatus(false);
+    renderOutput(parsed, { address, city, yearBuilt, sqft, homeType, features, moveDate, customTasks });
+  } catch(e) {
+    console.error(e);
+    setStatus(false);
+    renderOutput(getFallback(features, moveMonth), { address, city, yearBuilt, sqft, homeType, features, moveDate, customTasks });
+  }
+}
+
+// ── FALLBACK DATA ──────────────────────────────────────
+function getFallback(features, mm) {
+  const irrT = distToTiming(monthsAway(mm, 9));
+  const acT  = distToTiming(monthsAway(mm, 4));
+  const sections = [
+    {title:"Safety & security",icon:"🔒",items:[
+      {title:"Change all locks and garage codes",description:"Previous owners may still have access. Do this on move-in day — it's the single most important task.",timing:"now"},
+      {title:"Test smoke and CO detectors",description:"Replace all batteries and swap out any detectors older than 10 years.",timing:"now"},
+      {title:"Locate main water, gas, and electrical shutoffs",description:"Walk the property and label each one clearly. You need to know these instantly in an emergency.",timing:"now"}
+    ]},
+    {title:"Systems",icon:"🔧",items:[
+      {title:"Replace all HVAC air filters",description:"Check every air handler in the home. Set a 90-day calendar reminder to do it again.",timing:"now"},
+      {title:"Check under every sink for leaks",description:"Run each faucet and inspect inside every cabinet below. Small drips become big mold problems.",timing:"now"},
+      {title:"Schedule HVAC tune-up",description:"Annual professional service keeps the system efficient and the warranty valid.",timing:"soon"}
+    ]},
+    {title:"Seasonal prep",icon:"🍂",items:[
+      {title:"Winterize outdoor irrigation and hose bibs",description:"Blow out irrigation lines and disconnect hoses before the first hard freeze.",timing:irrT},
+      {title:"Schedule AC check before cooling season",description:"Have refrigerant levels and coil efficiency checked before peak heat.",timing:acT},
+      {title:"Clean gutters",description:"Remove debris from gutters and check that downspouts extend at least 6 feet from the foundation.",timing:distToTiming(monthsAway(mm, 9))}
+    ]}
+  ];
+  if(features.includes('Pool')) sections.push({title:"Pool & spa",icon:"🏊",items:[
+    {title:"Test and balance pool water chemistry",description:"pH 7.4–7.6, chlorine 1–3 ppm. Imbalanced water damages the shell and equipment fast.",timing:"now"},
+    {title:"Check pool safety fence and gate latch",description:"Self-closing, self-latching gates are legally required. Check all hinges and gap clearances.",timing:"now"},
+    {title:"Schedule seasonal pool close or service",description:"Plan ahead for winterization or the summer opening depending on your move-in timing.",timing:distToTiming(monthsAway(mm, 9))}
+  ]});
+  if(features.includes('Fireplace')) sections.push({title:"Fireplace & chimney",icon:"🔥",items:[
+    {title:"Schedule chimney inspection and sweep",description:"Required annually before first use. Creosote buildup is a leading cause of house fires.",timing:distToTiming(monthsAway(mm, 8))},
+    {title:"Test damper operation",description:"The damper must open and close fully. A stuck-open damper loses significant heat in winter.",timing:"now"}
+  ]});
+  return { sections };
+}
+
+// ── RENDER ─────────────────────────────────────────────
+const TIMING = {
+  now:    { label:'⚡ First 30 days', cls:'t-now' },
+  soon:   { label:'1–3 months',       cls:'t-soon' },
+  mid:    { label:'3–6 months',       cls:'t-mid' },
+  annual: { label:'Annual',           cls:'t-ann' },
+  custom: { label:'Custom',           cls:'t-cust' }
+};
+
+function renderOutput(data, props) {
+  const { address, city, yearBuilt, sqft, homeType, features, moveDate, customTasks } = props;
+
+  el('out-title').textContent = 'Year 1 Home Maintenance Checklist';
+  el('out-addr').textContent = [address, city].filter(Boolean).join(', ') || 'Your New Home';
+
+  const chips = [homeType, yearBuilt?`Built ${yearBuilt}`:null, sqft?`${sqft} sq ft`:null, moveDate&&moveDate!=='today'?`Move-in: ${moveDate}`:null, ...features].filter(Boolean);
+  el('out-meta').innerHTML = chips.map(c=>`<span class="meta-chip">${c}</span>`).join('');
+
+  const aName = val('agent-name'), aBrok = val('agent-brokerage'), aPhone = val('agent-phone');
+  if (aName||aBrok||aPhone) el('out-agent').innerHTML = [aName?`<strong>${aName}</strong>`:null, aBrok, aPhone].filter(Boolean).join('<br>');
+  if (agentLogo) { el('out-logo').src=agentLogo; el('out-logo').style.display='block'; }
+
+  const body = el('out-body'); body.innerHTML='';
+
+  (data.sections||[]).forEach(sec => {
+    const block = document.createElement('div'); block.className='sec-block';
+    const hdr = document.createElement('div'); hdr.className='sec-hdr';
+    hdr.innerHTML=`<div class="sec-icon">${sec.icon||'📋'}</div><div class="sec-title">${sec.title}</div><div class="sec-ct">${(sec.items||[]).length}</div><div class="chev open">▼</div>`;
+    const list = document.createElement('div'); list.className='sec-items open';
+    (sec.items||[]).forEach(item => {
+      const tm = TIMING[item.timing]||TIMING.annual;
+      const row = document.createElement('div'); row.className='chk-item';
+      row.innerHTML=`<div class="chk-box" onclick="this.classList.toggle('checked')"></div><div class="chk-body"><div class="chk-title">${item.title}</div><div class="chk-desc">${item.description}</div></div><span class="tbadge ${tm.cls}">${tm.label}</span>`;
+      list.appendChild(row);
+    });
+    hdr.addEventListener('click',()=>{ list.classList.toggle('open'); hdr.querySelector('.chev').classList.toggle('open'); });
+    block.appendChild(hdr); block.appendChild(list); body.appendChild(block);
+  });
+
+  if (customTasks&&customTasks.length>0) {
+    const block = document.createElement('div'); block.className='sec-block';
+    const hdr = document.createElement('div'); hdr.className='sec-hdr';
+    hdr.innerHTML=`<div class="sec-icon">✏️</div><div class="sec-title">Agent's Additional Tasks</div><div class="sec-ct">${customTasks.length}</div><div class="chev open">▼</div>`;
+    const list = document.createElement('div'); list.className='sec-items open';
+    customTasks.forEach(task => {
+      const tm = TIMING[task.timing]||TIMING.custom;
+      const row = document.createElement('div'); row.className='chk-item';
+      row.innerHTML=`<div class="chk-box" onclick="this.classList.toggle('checked')"></div><div class="chk-body"><div class="chk-title">${task.title}</div></div><span class="tbadge ${tm.cls}">${tm.label}</span>`;
+      list.appendChild(row);
+    });
+    hdr.addEventListener('click',()=>{ list.classList.toggle('open'); hdr.querySelector('.chev').classList.toggle('open'); });
+    block.appendChild(hdr); block.appendChild(list); body.appendChild(block);
+  }
+
+  const footer = document.createElement('div');
+  footer.style.cssText='padding:13px 22px;font-size:11px;color:#8AABB8;border-top:1px solid #EEF4F8;display:flex;justify-content:space-between';
+  footer.innerHTML=`<span>HouseAccount · houseaccount.com</span><span>${new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'})}</span>`;
+  body.appendChild(footer);
+
+  el('output').style.display='block';
+  el('output').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function resetForm() { el('output').style.display='none'; window.scrollTo({top:0,behavior:'smooth'}); }
+
+// ── CLAUDE API ─────────────────────────────────────────
+// Points to your Netlify function. For local testing, swap to the full Anthropic URL + add your key.
+async function callClaude(prompt, maxTokens=1000) {
+  const res = await fetch('/api/claude', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({ prompt, max_tokens: maxTokens })
+  });
+  return await res.json();
+}
+
+window.addEventListener('DOMContentLoaded', loadProfile);
+</script>
+</body>
+</html>
