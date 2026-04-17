@@ -511,13 +511,19 @@ async function generate() {
 
   try {
     const data = await callClaude(prompt, 1800);
+    if (data.error) throw new Error(data.error.message || 'API error');
     const raw = data.content[0].text;
-    const parsed = JSON.parse(raw.slice(raw.indexOf('{'), raw.lastIndexOf('}')+1));
+    const jsonStr = raw.slice(raw.indexOf('{'), raw.lastIndexOf('}')+1);
+    const parsed = JSON.parse(jsonStr);
     setStatus(false);
     renderOutput(parsed, { address, city, yearBuilt, sqft, homeType, features, moveDate, customTasks });
   } catch(e) {
-    console.error(e);
+    console.error('Generate error:', e);
     setStatus(false);
+    // Show fallback with a notice
+    el('status-bar').innerHTML = `<span style="color:#c0392b">⚠ Using offline checklist — ${e.message}</span>`;
+    el('status-bar').style.display = 'flex';
+    setTimeout(() => el('status-bar').style.display = 'none', 5000);
     renderOutput(buildFallback(features, age, moveMonth, monthsAway, distToTiming), { address, city, yearBuilt, sqft, homeType, features, moveDate, customTasks });
   }
 }

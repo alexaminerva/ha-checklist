@@ -33,9 +33,12 @@ function buildTaskList(features, age) {
     // Skip feature-specific tasks if property doesn't have that feature
     if (task.feature && !features.includes(task.feature)) continue;
 
-    // Skip age-gated tasks that don't match
-    if (task.minAge && age !== null && age < task.minAge) continue;
-    if (task.maxAge && age !== null && age > task.maxAge) continue;
+    // Skip age-gated tasks if age is unknown, or if age doesn't match the gate
+    if (task.minAge || task.maxAge) {
+      if (age === null) continue; // skip all age-specific tasks when year built is unknown
+      if (task.minAge && age < task.minAge) continue;
+      if (task.maxAge && age > task.maxAge) continue;
+    }
 
     const key = task.section;
     if (!sectionMap[key]) {
