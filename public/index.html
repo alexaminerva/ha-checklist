@@ -458,6 +458,70 @@ function applyListing(d) {
   updateSteps();
 }
 
+// ── PULL DETAILS FROM URL ──────────────────────────────
+async function fetchFromUrl() {
+  const listingUrl = val('listing-url');
+  if (!listingUrl) { alert('Paste a listing URL first.'); return; }
+
+  const btn = el('fetch-btn');
+  btn.disabled = true;
+  btn.textContent = 'Reading…';
+
+  // Instant fill from URL slug
+  const slugParsed = parseAddressFromUrl(listingUrl);
+  if (slugParsed) {
+    if (slugParsed.address && !val('address')) el('address').value = slugParsed.address;
+    if (slugParsed.city    && !val('city'))    el('city').value    = slugParsed.city;
+    updateSteps();
+  }
+
+  // Fetch full listing text
+  let pageText = '';
+  try {
+    const fetchRes = await fetch('/api/fetch-listing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: listingUrl }),
+    });
+    if (fetchRes.ok) {
+      const data = await fetchRes.json();
+      pageText = data.text || '';
+    }
+  } catch(e) { /* network error — URL slug only */ }
+
+  // If we got listing text, ask Claude to extract property details
+  if (pageText && pageText.length > 200) {
+    btn.textContent = 'Extracting…';
+    try {
+      const extractPrompt = `Extract property details from this real estate listing. Return ONLY valid JSON, no other text.
+
+LISTING TEXT:
+${pageText.slice(0, 6000)}
+
+Return this exact structure (null for any field not found):
+{
+  "address": "street address only",
+  "city": "City, ST",
+  "yearBuilt": 2005,
+  "sqft": 2400,
+  "homeType": "Single Family Home",
+  "features": { "pool": false, "spa": false, "deck": false, "fireplace": false, "basement": false, "garage": false, "well": false, "septic": false, "solar": false, "ev": false, "irrigation": false, "slate": false }
+}
+homeType must be exactly one of: "Single Family Home", "Townhouse", "Condo", "Multi-Family"`;
+
+      const claudeData = await callClaude(extractPrompt, 500);
+      if (claudeData.content && claudeData.content[0]) {
+        const raw = claudeData.content[0].text;
+        const jsonStr = raw.slice(raw.indexOf('{'), raw.lastIndexOf('}')+1);
+        applyListing(JSON.parse(jsonStr));
+      }
+    } catch(e) { /* extraction failed — URL slug data already in fields */ }
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Pull Details →';
+}
+
 // ── MOVE DATE → MONTH ──────────────────────────────────
 function getMoveMonth() {
   const raw = val('move-date');
@@ -505,8 +569,6 @@ async function generate() {
       updateSteps();
     }
   }
-
-  if (!address && !city) { alert('Could not read address from that URL — please fill in the address and city fields manually.'); return; }
 
   setStatus(true, 'Building your checklist…');
 
@@ -683,10 +745,19 @@ function updateSteps() {
 
 window.addEventListener('DOMContentLoaded', () => {
   loadProfile();
-  // Watch all inputs for step completion
   document.querySelectorAll('input, select, textarea').forEach(inp => {
     inp.addEventListener('input', updateSteps);
     inp.addEventListener('change', updateSteps);
+  });
+  // Auto-fill address/city instantly when a listing URL is pasted
+  el('listing-url').addEventListener('input', () => {
+    const url = val('listing-url');
+    const parsed = parseAddressFromUrl(url);
+    if (parsed) {
+      if (parsed.address && !val('address')) el('address').value = parsed.address;
+      if (parsed.city    && !val('city'))    el('city').value    = parsed.city;
+      updateSteps();
+    }
   });
   updateSteps();
 });

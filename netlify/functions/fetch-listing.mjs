@@ -11,49 +11,50 @@ export default async (req) => {
 
   try {
     const { url } = await req.json();
-
     let pageText = '';
 
-    // Primary: Jina AI Reader — bypasses Zillow/Redfin bot protection, returns clean markdown
-    try {
-      const jinaUrl = `https://r.jina.ai/${url}`;
-      const res = await fetch(jinaUrl, {
-        headers: {
-          'Accept': 'text/plain',
-          'X-Return-Format': 'markdown',
-        },
-        signal: AbortSignal.timeout(15000),
-      });
-
-      if (res.ok) {
-        const text = await res.text();
-        pageText = text.slice(0, 8000);
-      }
-    } catch (jinaErr) {
-      // Jina failed — try direct fetch as fallback
+    // Primary: Firecrawl — best bot bypass for real estate sites
+    if (process.env.FIRECRAWL_API_KEY) {
       try {
-        const res = await fetch(url, {
+        const fcRes = await fetch('https://api.firecrawl.dev/v1/scrape', {
+          method: 'POST',
           headers: {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.9',
-            'Cache-Control': 'no-cache',
+            'Authorization': `Bearer ${process.env.FIRECRAWL_API_KEY}`,
+            'Content-Type': 'application/json',
           },
-          redirect: 'follow',
-          signal: AbortSignal.timeout(10000),
+          body: JSON.stringify({
+            url,
+            formats: ['markdown'],
+            onlyMainContent: true,
+            waitFor: 2000,
+          }),
+          signal: AbortSignal.timeout(25000),
         });
-
-        if (res.ok) {
-          const html = await res.text();
-          pageText = html
-            .replace(/<script[\s\S]*?<\/script>/gi, '')
-            .replace(/<style[\s\S]*?<\/style>/gi, '')
-            .replace(/<[^>]+>/g, ' ')
-            .replace(/\s+/g, ' ')
-            .slice(0, 8000);
+        if (fcRes.ok) {
+          const fcData = await fcRes.json();
+          pageText = (fcData.data?.markdown || fcData.markdown || '').slice(0, 8000);
         }
-      } catch (fetchErr) {
-        // Both failed — Claude will extract from URL slug only
+      } catch (fcErr) {
+        // Firecrawl failed — fall through to Jina
+      }
+    }
+
+    // Fallback: Jina AI Reader
+    if (!pageText) {
+      try {
+        const jinaRes = await fetch(`https://r.jina.ai/${url}`, {
+          headers: {
+            'Accept': 'text/plain',
+            'X-Return-Format': 'markdown',
+          },
+          signal: AbortSignal.timeout(15000),
+        });
+        if (jinaRes.ok) {
+          const text = await jinaRes.text();
+          pageText = text.slice(0, 8000);
+        }
+      } catch (jinaErr) {
+        // Jina failed — return empty, client will use URL slug only
       }
     }
 
