@@ -14,29 +14,47 @@ export default async (req) => {
 
     let pageText = '';
 
+    // Primary: Jina AI Reader — bypasses Zillow/Redfin bot protection, returns clean markdown
     try {
-      const res = await fetch(url, {
+      const jinaUrl = `https://r.jina.ai/${url}`;
+      const res = await fetch(jinaUrl, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-          'Accept-Language': 'en-US,en;q=0.9',
-          'Accept-Encoding': 'gzip, deflate, br',
-          'Cache-Control': 'no-cache',
+          'Accept': 'text/plain',
+          'X-Return-Format': 'markdown',
         },
-        redirect: 'follow',
+        signal: AbortSignal.timeout(15000),
       });
 
       if (res.ok) {
-        const html = await res.text();
-        pageText = html
-          .replace(/<script[\s\S]*?<\/script>/gi, '')
-          .replace(/<style[\s\S]*?<\/style>/gi, '')
-          .replace(/<[^>]+>/g, ' ')
-          .replace(/\s+/g, ' ')
-          .slice(0, 8000);
+        const text = await res.text();
+        pageText = text.slice(0, 8000);
       }
-    } catch (fetchErr) {
-      // Page fetch failed — Claude will extract from URL only
+    } catch (jinaErr) {
+      // Jina failed — try direct fetch as fallback
+      try {
+        const res = await fetch(url, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Cache-Control': 'no-cache',
+          },
+          redirect: 'follow',
+          signal: AbortSignal.timeout(10000),
+        });
+
+        if (res.ok) {
+          const html = await res.text();
+          pageText = html
+            .replace(/<script[\s\S]*?<\/script>/gi, '')
+            .replace(/<style[\s\S]*?<\/style>/gi, '')
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/\s+/g, ' ')
+            .slice(0, 8000);
+        }
+      } catch (fetchErr) {
+        // Both failed — Claude will extract from URL slug only
+      }
     }
 
     return Response.json({ text: pageText, url }, {
