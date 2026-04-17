@@ -158,31 +158,25 @@ textarea.ftarea{resize:vertical;min-height:72px;line-height:1.55}
       <div class="flow-step">
         <div class="flow-step-num">1</div>
         <div class="flow-step-title">Always-include tasks</div>
-        <div class="flow-step-desc">Your core list — appears on every single checklist</div>
+        <div class="flow-step-desc">Core tasks that appear on every checklist, no matter what</div>
       </div>
       <div class="flow-arrow">→</div>
       <div class="flow-step">
         <div class="flow-step-num">2</div>
-        <div class="flow-step-title">Location tasks</div>
-        <div class="flow-step-desc">AI adds 4–5 tasks based on the home's climate and region</div>
+        <div class="flow-step-title">Age-gated tasks</div>
+        <div class="flow-step-desc">Tasks tagged for new, mid-age, or older homes — auto-filtered by year built</div>
       </div>
       <div class="flow-arrow">→</div>
       <div class="flow-step">
         <div class="flow-step-num">3</div>
-        <div class="flow-step-title">Age-based tasks</div>
-        <div class="flow-step-desc">2–3 tasks based on how old the home is</div>
+        <div class="flow-step-title">Feature tasks</div>
+        <div class="flow-step-desc">Pool, fireplace, garage etc — only included when detected on the property</div>
       </div>
       <div class="flow-arrow">→</div>
       <div class="flow-step">
         <div class="flow-step-num">4</div>
-        <div class="flow-step-title">Feature tasks</div>
-        <div class="flow-step-desc">Pool, fireplace, garage etc — only if detected on the property</div>
-      </div>
-      <div class="flow-arrow">→</div>
-      <div class="flow-step">
-        <div class="flow-step-num">5</div>
-        <div class="flow-step-title">Timing adjusted</div>
-        <div class="flow-step-desc">Every task is timed relative to the homeowner's move-in date</div>
+        <div class="flow-step-title">Timing adjusted by AI</div>
+        <div class="flow-step-desc">AI assigns "now / 1–3 months / 3–6 months / annual" based on location and move-in date</div>
       </div>
     </div>
   </div>
@@ -204,35 +198,7 @@ textarea.ftarea{resize:vertical;min-height:72px;line-height:1.55}
   </div>
 
 
-  <!-- SECTION 2: AGE RULES -->
-  <div class="editor-section">
-    <div class="section-hdr">
-      <div class="section-icon">🏠</div>
-      <div class="section-hdr-text">
-        <h2>Recommendations based on home age</h2>
-        <p>The AI reads this and generates 2–3 specific tasks based on how old the home is. Write in plain sentences — the AI turns them into formatted tasks.</p>
-      </div>
-    </div>
-    <div class="section-body">
-      <div class="age-grid">
-        <div class="age-card">
-          <div class="age-card-hdr">New home — under 5 years old</div>
-          <textarea id="age-new" class="ftarea" style="border:none;border-radius:0" placeholder="What should new homeowners check or do?"></textarea>
-        </div>
-        <div class="age-card">
-          <div class="age-card-hdr">Mid-age — 5 to 20 years old</div>
-          <textarea id="age-mid" class="ftarea" style="border:none;border-radius:0" placeholder="What should mid-age homeowners check or do?"></textarea>
-        </div>
-        <div class="age-card">
-          <div class="age-card-hdr">Older home — over 20 years old</div>
-          <textarea id="age-old" class="ftarea" style="border:none;border-radius:0" placeholder="What should older-home owners check or do?"></textarea>
-        </div>
-      </div>
-    </div>
-  </div>
-
-
-  <!-- SECTION 3: SEASONAL TIMING -->
+  <!-- SECTION 2: SEASONAL TIMING -->
   <div class="editor-section">
     <div class="section-hdr">
       <div class="section-icon">📅</div>
@@ -410,6 +376,15 @@ function makeTaskCard(task, index) {
 
   const featureOpts = FEATURES.map(f => `<option value="${f}" ${task.feature === f ? 'selected' : ''}>${f || '— All homes —'}</option>`).join('');
   const timingOpts = TIMING_OPTIONS.map(o => `<option value="${o.value}" ${task.timing === o.value ? 'selected' : ''}>${o.label}</option>`).join('');
+  const ageOpts = [
+    {v:'',     l:'— All homes —'},
+    {v:'new',  l:'New home only (under 5 years)'},
+    {v:'mid',  l:'Mid-age only (5–20 years)'},
+    {v:'old',  l:'Older home only (21+ years)'},
+  ].map(o => {
+    const sel = (task.maxAge===4&&o.v==='new')||(task.minAge===5&&task.maxAge===20&&o.v==='mid')||(task.minAge===21&&o.v==='old') ? 'selected' : (!task.minAge&&!task.maxAge&&o.v===''?'selected':'');
+    return `<option value="${o.v}" ${sel}>${o.l}</option>`;
+  }).join('');
 
   const body = document.createElement('div');
   body.className = 'task-card-body';
@@ -428,9 +403,16 @@ function makeTaskCard(task, index) {
         <select class="fselect" onchange="updateTask(${index},'timing',this.value); refreshTimingBadge(${index},this.value)">${timingOpts}</select>
       </div>
       <div>
+        <label class="flabel">Show for which home age?</label>
+        <select class="fselect" onchange="updateTaskAge(${index},this.value)">${ageOpts}</select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div>
         <label class="flabel">Only show if home has… <span style="font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">(optional)</span></label>
         <select class="fselect" onchange="updateTask(${index},'feature',this.value)">${featureOpts}</select>
       </div>
+      <div></div>
     </div>
     <div class="task-actions">
       <button class="task-rm-btn" onclick="removeTask(${index})">Remove task</button>
@@ -480,6 +462,13 @@ function updateTask(i, field, val) {
   if (val === '' && field === 'feature') val = undefined;
   state.backupChecklist[i][field] = val || undefined;
 }
+function updateTaskAge(i, val) {
+  const t = state.backupChecklist[i];
+  delete t.minAge; delete t.maxAge;
+  if (val === 'new') { t.maxAge = 4; }
+  else if (val === 'mid') { t.minAge = 5; t.maxAge = 20; }
+  else if (val === 'old') { t.minAge = 21; }
+}
 function removeTask(i) {
   state.backupChecklist.splice(i,1);
   renderBackup(state.backupChecklist);
@@ -521,11 +510,6 @@ function addSection() {
 
 // ── SAVE ──────────────────────────────────────────────────────────
 function saveAll() {
-  state.ageRules = {
-    new_home:   document.getElementById('age-new').value,
-    mid_age:    document.getElementById('age-mid').value,
-    older_home: document.getElementById('age-old').value,
-  };
   state.bestMonthFor = {
     winterize_irrigation: parseInt(document.getElementById('month-winterize').value),
     clean_gutters:        parseInt(document.getElementById('month-gutters').value),
@@ -549,9 +533,6 @@ function escHtml(s) {
 window.addEventListener('DOMContentLoaded', () => {
   state = loadState();
   renderAlways(state.alwaysInclude);
-  document.getElementById('age-new').value = state.ageRules.new_home;
-  document.getElementById('age-mid').value = state.ageRules.mid_age;
-  document.getElementById('age-old').value = state.ageRules.older_home;
   populateMonthSelects(state);
   document.getElementById('total-tasks').value = state.totalTasks;
   renderBackup(state.backupChecklist);
