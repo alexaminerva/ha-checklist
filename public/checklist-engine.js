@@ -76,7 +76,7 @@ function buildFallback(features, age, moveMonth, monthsAway, distToTiming) {
 }
 
 // Builds the AI prompt — Claude's ONLY job is assigning timing to the fixed task list
-function buildPrompt({ address, city, homeType, age, yearBuilt, sqft, moveMonth, moveMonthName, features, monthsAway, distToTiming }) {
+function buildPrompt({ address, city, homeType, age, yearBuilt, sqft, moveMonth, moveMonthName, features, monthsAway, distToTiming, listingUrl, listingText }) {
   const sections = buildTaskList(features, age);
 
   // Pre-calculate seasonal timing hints for Claude
@@ -96,12 +96,16 @@ function buildPrompt({ address, city, homeType, age, yearBuilt, sqft, moveMonth,
     }
   }
 
+  const locationNote = listingUrl && !address && !city
+    ? `\nListing URL (parse address/city from this if needed): ${listingUrl}${listingText ? '\nListing content (excerpt): ' + listingText.slice(0, 2000) : ''}`
+    : '';
+
   return `You are a home maintenance scheduling expert. Your ONLY job is to assign a timing value to each task below based on the homeowner's location and move-in date. Do NOT add, remove, rename, or reorder any tasks.
 
 PROPERTY:
-- Address: ${address || 'unknown'}, ${city || 'unknown'}
+- Address: ${address || 'see listing URL below'}, ${city || ''}
 - Type: ${homeType}${age ? `, built ${yearBuilt} (${age} years old)` : ''}
-- Move-in month: ${moveMonthName} (index ${moveMonth}, 0=January)
+- Move-in month: ${moveMonthName} (index ${moveMonth}, 0=January)${locationNote}
 
 TIMING VALUES:
 - "now" = first 30 days after move-in

@@ -5,3 +5,7 @@
 [[edge_functions]]
   function = "claude"
   path = "/api/claude"
+
+[[edge_functions]]
+  function = "fetch-listing"
+  path = "/api/fetch-listing"

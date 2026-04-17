@@ -388,61 +388,18 @@ function getCustomTasks() {
   }).filter(t => t.title);
 }
 
-// ── URL FETCH ──────────────────────────────────────────
-function withTimeout(promise, ms) {
-  return Promise.race([promise, new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))]);
-}
-
-async function fetchFromUrl() {
-  const url = val('listing-url'); if(!url) return;
-  setStatus(true, 'Reading listing page…');
-
-  let pageText = '';
+// ── URL FETCH (optional, best-effort) ─────────────────
+async function fetchListingText(url) {
   try {
-    const r = await withTimeout(fetch('/api/fetch-listing', {
+    const r = await fetch('/api/fetch-listing', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url })
-    }), 12000);
+      body: JSON.stringify({ url }),
+      signal: AbortSignal.timeout(10000)
+    });
     const d = await r.json();
-    pageText = d.text || '';
-  } catch(e){}
-
-  setStatus(true, 'Extracting property details…');
-
-  const prompt = `Extract property details from this real estate listing. The listing URL itself often contains the address — use it.
-
-URL: ${url}
-Page content (may be empty if blocked): ${pageText ? pageText.slice(0, 6000) : '(not available — extract from URL only)'}
-
-Return ONLY valid JSON, nothing else:
-{
-  "address": "street address only (e.g. 123 Oak St)",
-  "city": "City, ST (e.g. Dallas, TX)",
-  "yearBuilt": "YYYY or null",
-  "sqft": "number only, no commas, or null",
-  "homeType": "Single Family Home|Condo|Townhouse|Multi-Family",
-  "features": {
-    "pool": bool, "spa": bool, "deck": bool, "fireplace": bool,
-    "basement": bool, "garage": bool, "well": bool, "septic": bool,
-    "solar": bool, "ev": bool, "irrigation": bool, "slate": bool
-  }
-}
-
-Notes:
-- Zillow/Redfin URLs often contain the address in the slug — always parse it.
-- If page content is unavailable, do your best from the URL alone.
-- Return null for any field you cannot determine — never guess sqft or year built.`;
-
-  try {
-    const data = await withTimeout(callClaude(prompt, 600), 15000);
-    if (data.error) throw new Error(data.error.message);
-    const raw = data.content[0].text;
-    const parsed = JSON.parse(raw.slice(raw.indexOf('{'), raw.lastIndexOf('}')+1));
-    applyListing(parsed);
-  } catch(e) {
-    // Timed out or failed — generate() will continue with whatever is in the form fields
-  }
+    return d.text || '';
+  } catch(e) { return ''; }
 }
 
 const FEAT_MAP = {pool:'f-pool',spa:'f-spa',deck:'f-deck',fireplace:'f-fp',basement:'f-bsmt',garage:'f-gar',well:'f-well',septic:'f-sep',solar:'f-sol',ev:'f-ev',irrigation:'f-irr',slate:'f-sl'};
@@ -489,29 +446,31 @@ function distToTiming(mo) {
 
 // ── GENERATE ───────────────────────────────────────────
 async function generate() {
-  // If there's a URL but no address yet, fetch first automatically
-  if (val('listing-url') && !val('address') && !val('city')) {
-    await fetchFromUrl();
-  }
-
-  const address = val('address'), city = val('city'), yearBuilt = val('year-built');
+  const listingUrl = val('listing-url');
+  let address = val('address'), city = val('city'), yearBuilt = val('year-built');
   const sqft = val('sqft'), homeType = val('home-type')||'Single Family Home';
+
+  if (!address && !city && !listingUrl) { alert('Enter an address or paste a listing URL first.'); return; }
+
   const moveDate = val('move-date')||'today';
   const moveMonth = getMoveMonth();
   const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   const moveMonthName = MONTH_NAMES[moveMonth];
-
   const features = Object.values(FEAT_MAP).filter(id=>el(id).checked).map(id=>el(id).value);
   const customTasks = getCustomTasks();
 
-  const finalAddress = val('address'), finalCity = val('city');
-  if (!finalAddress && !finalCity && !val('listing-url')) { alert('Enter an address or paste a listing URL first.'); return; }
+  setStatus(true, 'Building your checklist…');
+
+  // If we have a URL, try to fetch listing text (non-blocking, best-effort)
+  let listingText = '';
+  if (listingUrl && (!address || !city)) {
+    setStatus(true, 'Reading listing…');
+    listingText = await fetchListingText(listingUrl);
+  }
 
   const age = yearBuilt ? new Date().getFullYear() - parseInt(yearBuilt) : null;
-
-  setStatus(true, 'Building your personalized checklist…');
-
-  const prompt = buildPrompt({ address, city, homeType, age, yearBuilt, sqft, moveMonth, moveMonthName, features, monthsAway, distToTiming });
+  const prompt = buildPrompt({ address, city, homeType, age, yearBuilt, sqft, moveMonth, moveMonthName, features, monthsAway, distToTiming, listingUrl, listingText });
+  setStatus(true, 'Building your checklist…');
 
   try {
     const data = await callClaude(prompt, 1800);
