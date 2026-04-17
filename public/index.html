@@ -343,39 +343,53 @@ function getCustomTasks() {
 async function fetchFromUrl() {
   const url = val('listing-url'); if(!url) return;
   setStatus(true, 'Reading listing page…');
-  let text = `Listing URL: ${url}`;
+
+  let pageText = '';
   try {
-    const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
+    const r = await fetch('/api/fetch-listing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    });
     const d = await r.json();
-    text = (d.contents||'').replace(/<script[\s\S]*?<\/script>/gi,'').replace(/<style[\s\S]*?<\/style>/gi,'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').slice(0,6000);
+    pageText = d.text || '';
   } catch(e){}
 
   setStatus(true, 'Extracting property details…');
-  const prompt = `Extract property details from this listing text. Return ONLY valid JSON, nothing else.
 
-Text: ${text}
+  const prompt = `Extract property details from this real estate listing. The listing URL itself often contains the address — use it.
 
-Return:
+URL: ${url}
+Page content (may be empty if blocked): ${pageText ? pageText.slice(0, 6000) : '(not available — extract from URL only)'}
+
+Return ONLY valid JSON, nothing else:
 {
-  "address": "street only",
-  "city": "City, ST",
+  "address": "street address only (e.g. 123 Oak St)",
+  "city": "City, ST (e.g. Dallas, TX)",
   "yearBuilt": "YYYY or null",
-  "sqft": "number only or null",
+  "sqft": "number only, no commas, or null",
   "homeType": "Single Family Home|Condo|Townhouse|Multi-Family",
-  "climate": "cold_snowy|hot_humid|hot_dry|temperate",
-  "features": {"pool":bool,"spa":bool,"deck":bool,"fireplace":bool,"basement":bool,"garage":bool,"well":bool,"septic":bool,"solar":bool,"ev":bool,"irrigation":bool,"slate":bool}
+  "features": {
+    "pool": bool, "spa": bool, "deck": bool, "fireplace": bool,
+    "basement": bool, "garage": bool, "well": bool, "septic": bool,
+    "solar": bool, "ev": bool, "irrigation": bool, "slate": bool
+  }
 }
-Climate: CT/NY/MA/NJ/PA/IL/MN/OH/MI/CO/WI = cold_snowy. TX/FL/GA/LA/SC/AL/MS = hot_humid. AZ/NV/NM/UT/CA-inland = hot_dry. OR/WA/CA-coast/MD/VA/NC/TN = temperate.`;
+
+Notes:
+- Zillow/Redfin URLs often contain the address in the slug — always parse it.
+- If page content is unavailable, do your best from the URL alone.
+- Return null for any field you cannot determine — never guess sqft or year built.`;
 
   try {
-    const data = await callClaude(prompt, 500);
+    const data = await callClaude(prompt, 600);
     const raw = data.content[0].text;
     const parsed = JSON.parse(raw.slice(raw.indexOf('{'), raw.lastIndexOf('}')+1));
     applyListing(parsed);
   } catch(e) {
     console.error(e);
     setStatus(false);
-    el('detect-label').textContent = 'Auto-detect failed — please fill in manually';
+    el('detect-label').textContent = 'Could not read listing — please fill in the details manually';
   }
 }
 
