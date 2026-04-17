@@ -142,9 +142,9 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue);background:var(
   <div class="card">
     <div class="card-title">Property Details</div>
     <div class="field">
-      <label>Listing URL <span style="color:var(--muted);font-weight:400">(Zillow, Redfin, Realtor.com)</span></label>
+      <label>Listing URL <span style="color:var(--muted);font-weight:400">(Redfin or Realtor.com work best — Zillow often blocks)</span></label>
       <div class="input-row">
-        <input type="url" id="listing-url" placeholder="https://www.zillow.com/homedetails/...">
+        <input type="url" id="listing-url" placeholder="https://www.redfin.com/...  or  https://www.realtor.com/...">
         <button class="btn btn-outline btn-sm" onclick="fetchFromUrl()" id="fetch-btn">Pull Details →</button>
       </div>
     </div>
