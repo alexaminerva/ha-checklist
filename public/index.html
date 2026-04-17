@@ -88,23 +88,33 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue);background:var(
 .sec-ct{font-size:11px;font-weight:600;color:#185FA5;background:#DFF0F8;border-radius:20px;padding:3px 9px}
 .chev{font-size:11px;color:var(--muted);transition:transform .2s}.chev.open{transform:rotate(180deg)}
 .sec-items{display:none}.sec-items.open{display:block}
-.chk-item{display:flex;align-items:flex-start;gap:12px;padding:11px 22px;border-bottom:1px solid #F0F6FA;transition:background .1s}
+.chk-item{display:flex;align-items:flex-start;gap:12px;padding:11px 22px;border-bottom:1px solid #F0F6FA;transition:background .1s;position:relative}
 .chk-item:last-child{border-bottom:none}.chk-item:hover{background:#FAFCFE}
+.chk-item:hover .chk-controls{opacity:1}
+.chk-controls{display:flex;gap:4px;opacity:0;transition:opacity .15s;flex-shrink:0;align-self:flex-start;margin-top:1px}
+.chk-del{background:none;border:1px solid var(--border);border-radius:5px;width:22px;height:22px;font-size:13px;cursor:pointer;color:var(--muted);display:flex;align-items:center;justify-content:center;transition:all .12s;line-height:1}
+.chk-del:hover{border-color:#c0392b;color:#c0392b;background:#fff5f5}
 .chk-box{width:19px;height:19px;border:1.5px solid var(--border);border-radius:5px;flex-shrink:0;margin-top:2px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
 .chk-box.checked{background:var(--navy);border-color:var(--navy)}.chk-box.checked::after{content:'✓';color:#fff;font-size:11px;font-weight:700}
-.chk-body{flex:1}
-.chk-title{font-size:13px;font-weight:500;color:var(--text)}
-.chk-desc{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.5}
+.chk-body{flex:1;min-width:0}
+.chk-title{font-size:13px;font-weight:500;color:var(--text);outline:none;border-radius:3px;padding:1px 3px;margin:-1px -3px}
+.chk-title:focus{background:#EEF4F8;box-shadow:0 0 0 2px var(--blue)}
+.chk-desc{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.5;outline:none;border-radius:3px;padding:1px 3px;margin-left:-3px}
+.chk-desc:focus{background:#EEF4F8;box-shadow:0 0 0 2px var(--blue)}
+.chk-placeholder{font-size:12px;color:#b0bec5;font-style:italic;margin-top:2px}
 .tbadge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0;align-self:flex-start;margin-top:2px}
 .t-now{background:#FEE2E2;color:#B91C1C}
 .t-soon{background:#EDE9FE;color:#5B21B6}
 .t-mid{background:#FEF3C7;color:#854F0B}
 .t-ann{background:#DCFCE7;color:#14532D}
 .t-cust{background:#EEF4F8;color:#1C3A4A}
+.add-chk-btn{display:flex;align-items:center;gap:6px;width:100%;padding:9px 22px;font-size:12px;font-weight:600;color:var(--muted);background:none;border:none;border-top:1px dashed var(--border);cursor:pointer;font-family:inherit;transition:all .12s;text-align:left}
+.add-chk-btn:hover{color:var(--blue);background:var(--light-bg)}
 .out-actions{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
 @media print{
   body{background:#fff}
   .topbar,.hero,.card,.out-actions,.status-bar{display:none!important}
+  .chk-controls,.add-chk-btn{display:none!important}
   #output{display:block!important}
   .sec-items{display:block!important}
   .sec-hdr{cursor:default;background:#EEF4F8!important}
@@ -499,44 +509,84 @@ function renderOutput(data, props) {
 
   const body = el('out-body'); body.innerHTML='';
 
-  (data.sections||[]).forEach(sec => {
+  function makeTaskRow(title, description, tm) {
+    const row = document.createElement('div'); row.className='chk-item';
+    row.innerHTML=`
+      <div class="chk-box" onclick="this.classList.toggle('checked')"></div>
+      <div class="chk-body">
+        <div class="chk-title" contenteditable="true" spellcheck="false">${title}</div>
+        ${description ? `<div class="chk-desc" contenteditable="true" spellcheck="false">${description}</div>` : ''}
+      </div>
+      <span class="tbadge ${tm.cls}">${tm.label}</span>
+      <div class="chk-controls">
+        <button class="chk-del" title="Remove task" onclick="removeTask(this)">×</button>
+      </div>`;
+    return row;
+  }
+
+  function removeTask(btn) {
+    const item = btn.closest('.chk-item');
+    const list = item.closest('.sec-items');
+    const block = list.closest('.sec-block');
+    item.remove();
+    updateCount(block);
+    if (!list.querySelector('.chk-item')) block.remove();
+  }
+
+  function updateCount(block) {
+    const ct = block.querySelectorAll('.chk-item').length;
+    const badge = block.querySelector('.sec-ct');
+    if (badge) badge.textContent = ct;
+  }
+
+  function addTaskToList(list, block) {
+    const tm = TIMING['custom'] || TIMING.annual;
+    const row = makeTaskRow('New task — click to edit', '', tm);
+    list.insertBefore(row, list.querySelector('.add-chk-btn'));
+    updateCount(block);
+    row.querySelector('.chk-title').focus();
+    const range = document.createRange(); range.selectNodeContents(row.querySelector('.chk-title')); range.collapse(false);
+    const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+  }
+
+  const allSections = [...(data.sections||[])];
+  if (customTasks&&customTasks.length>0) {
+    allSections.push({ title:"Agent's Notes", icon:'✏️', items: customTasks.map(t=>({...t, timing:t.timing||'custom'})) });
+  }
+
+  allSections.forEach(sec => {
     const block = document.createElement('div'); block.className='sec-block';
     const hdr = document.createElement('div'); hdr.className='sec-hdr';
     hdr.innerHTML=`<div class="sec-icon">${sec.icon||'📋'}</div><div class="sec-title">${sec.title}</div><div class="sec-ct">${(sec.items||[]).length}</div><div class="chev open">▼</div>`;
     const list = document.createElement('div'); list.className='sec-items open';
+
     (sec.items||[]).forEach(item => {
       const tm = TIMING[item.timing]||TIMING.annual;
-      const row = document.createElement('div'); row.className='chk-item';
-      row.innerHTML=`<div class="chk-box" onclick="this.classList.toggle('checked')"></div><div class="chk-body"><div class="chk-title">${item.title}</div><div class="chk-desc">${item.description}</div></div><span class="tbadge ${tm.cls}">${tm.label}</span>`;
-      list.appendChild(row);
+      list.appendChild(makeTaskRow(item.title, item.description||'', tm));
     });
+
+    const addBtn = document.createElement('button'); addBtn.className='add-chk-btn';
+    addBtn.textContent='+ Add task';
+    addBtn.addEventListener('click', ()=> addTaskToList(list, block));
+    list.appendChild(addBtn);
+
     hdr.addEventListener('click',()=>{ list.classList.toggle('open'); hdr.querySelector('.chev').classList.toggle('open'); });
     block.appendChild(hdr); block.appendChild(list); body.appendChild(block);
   });
-
-  if (customTasks&&customTasks.length>0) {
-    const block = document.createElement('div'); block.className='sec-block';
-    const hdr = document.createElement('div'); hdr.className='sec-hdr';
-    hdr.innerHTML=`<div class="sec-icon">✏️</div><div class="sec-title">Agent's Additional Tasks</div><div class="sec-ct">${customTasks.length}</div><div class="chev open">▼</div>`;
-    const list = document.createElement('div'); list.className='sec-items open';
-    customTasks.forEach(task => {
-      const tm = TIMING[task.timing]||TIMING.custom;
-      const row = document.createElement('div'); row.className='chk-item';
-      row.innerHTML=`<div class="chk-box" onclick="this.classList.toggle('checked')"></div><div class="chk-body"><div class="chk-title">${task.title}</div></div><span class="tbadge ${tm.cls}">${tm.label}</span>`;
-      list.appendChild(row);
-    });
-    hdr.addEventListener('click',()=>{ list.classList.toggle('open'); hdr.querySelector('.chev').classList.toggle('open'); });
-    block.appendChild(hdr); block.appendChild(list); body.appendChild(block);
-  }
 
   const footer = document.createElement('div');
   footer.style.cssText='padding:13px 22px;font-size:11px;color:#8AABB8;border-top:1px solid #EEF4F8;display:flex;justify-content:space-between';
   footer.innerHTML=`<span>HouseAccount · houseaccount.com</span><span>${new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'})}</span>`;
   body.appendChild(footer);
 
-  // Build agent-tagged QR code
-  const agentParam = encodeURIComponent(val('agent-name') || val('agent-brokerage') || '');
-  const offerUrl = `${location.origin}/offer.html${agentParam ? '?agent=' + agentParam : ''}`;
+  // Build unique agent QR slug: name + brokerage → "sarah-chen--compass"
+  function toSlug(s){ return (s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
+  const agentSlug = [toSlug(val('agent-name')), toSlug(val('agent-brokerage'))].filter(Boolean).join('--');
+  const qrParams = new URLSearchParams();
+  if (val('agent-name'))     qrParams.set('name', val('agent-name'));
+  if (val('agent-brokerage')) qrParams.set('brok', val('agent-brokerage'));
+  if (agentSlug)              qrParams.set('ref',  agentSlug);
+  const offerUrl = `${location.origin}/offer.html${qrParams.toString() ? '?' + qrParams.toString() : ''}`;
   el('qr-img').src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&color=1C3A4A&data=${encodeURIComponent(offerUrl)}`;
   el('qr-url').textContent = offerUrl;
 

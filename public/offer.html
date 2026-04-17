@@ -121,7 +121,9 @@ input.err{border-color:#c0392b}
 
         <form id="claim-form" name="handyman-match-claim" data-netlify="true">
           <input type="hidden" name="form-name" value="handyman-match-claim">
-          <input type="hidden" name="agent" id="hidden-agent" value="">
+          <input type="hidden" name="ref"          id="hidden-ref"   value="">
+          <input type="hidden" name="agent-name"   id="hidden-name"  value="">
+          <input type="hidden" name="brokerage"    id="hidden-brok"  value="">
 
           <div class="field">
             <label>First & last name <span style="color:#c0392b">*</span></label>
@@ -165,11 +167,36 @@ input.err{border-color:#c0392b}
 </footer>
 
 <script>
-// Pre-fill agent name from URL param
+// Read agent params from QR URL and log the pageview
 (function(){
   const p = new URLSearchParams(window.location.search);
-  const agent = p.get('agent') || '';
-  document.getElementById('hidden-agent').value = agent;
+  const ref  = p.get('ref')  || '';
+  const name = p.get('name') || '';
+  const brok = p.get('brok') || '';
+  document.getElementById('hidden-ref').value  = ref;
+  document.getElementById('hidden-name').value = name;
+  document.getElementById('hidden-brok').value = brok;
+
+  // Show agent attribution if we know who sent this
+  if (name || brok) {
+    const pill = document.querySelector('.hero-pill');
+    if (pill) pill.textContent = `A gift from ${[name, brok].filter(Boolean).join(' · ')}`;
+  }
+
+  // Log the QR scan / page view for tracking
+  if (ref || name) {
+    fetch('/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        'form-name':   'offer-pageview',
+        'ref':         ref,
+        'agent-name':  name,
+        'brokerage':   brok,
+        'timestamp':   new Date().toISOString(),
+      }).toString()
+    }).catch(()=>{});
+  }
 })();
 
 function submitForm() {
@@ -190,11 +217,13 @@ function submitForm() {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
-      'form-name': 'handyman-match-claim',
-      'agent':     document.getElementById('hidden-agent').value,
-      'name':      document.getElementById('f-name').value,
-      'email':     document.getElementById('f-email').value,
-      'address':   document.getElementById('f-address').value,
+      'form-name':  'handyman-match-claim',
+      'ref':        document.getElementById('hidden-ref').value,
+      'agent-name': document.getElementById('hidden-name').value,
+      'brokerage':  document.getElementById('hidden-brok').value,
+      'name':       document.getElementById('f-name').value,
+      'email':      document.getElementById('f-email').value,
+      'address':    document.getElementById('f-address').value,
     }).toString()
   })
   .finally(() => {
