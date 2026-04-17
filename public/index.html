@@ -250,6 +250,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue);background:var(
   </div>
 </div>
 
+<script src="checklist-config.js"></script>
 <script>
 const PKEY = 'ha_agent_v2';
 let agentLogo = null;
@@ -435,67 +436,9 @@ async function generate() {
 
   const age = yearBuilt ? new Date().getFullYear() - parseInt(yearBuilt) : null;
 
-  // Pre-compute timing for common seasonal tasks so the prompt is explicit
-  const winterizeMonth = 9; // October ideal for winterizing irrigation
-  const gutterMonth = 9;    // October for gutter cleaning
-  const acCheckMonth = 4;   // May for AC check
-  const chimneySweepMonth = moveMonth <= 8 ? 8 : moveMonth; // Before heating season
-
   setStatus(true, 'Building your personalized checklist…');
 
-  const prompt = `You are a home maintenance expert. Generate a focused Year 1 checklist: 18–22 tasks total.
-
-PROPERTY:
-- ${address||'address unknown'}, ${city||'city unknown'}
-- ${homeType}${age ? `, built ${yearBuilt} (${age} years old)` : ''}
-- ${sqft ? sqft+' sq ft' : ''}
-- Move-in month: ${moveMonthName} (month index ${moveMonth}, 0=January)
-- Features: ${features.length ? features.join(', ') : 'standard'}
-
-TIMING RULES:
-Assign each task a timing value based on the move-in month of ${moveMonthName}.
-- "now" = do in first 30 days
-- "soon" = 1–3 months from move-in
-- "mid" = 3–6 months from move-in  
-- "annual" = recurring yearly task, or more than 6 months away
-
-For geographic seasonal tasks, calculate the ideal calendar month for that task, then figure out how many months away it is from ${moveMonthName}:
-- Winterize irrigation: ideally October. That is ${monthsAway(moveMonth, winterizeMonth)} months away from ${moveMonthName}, so timing = "${distToTiming(monthsAway(moveMonth, winterizeMonth))}"
-- Clean gutters: ideally October. ${monthsAway(moveMonth, gutterMonth)} months away = "${distToTiming(monthsAway(moveMonth, gutterMonth))}"
-- AC tune-up: ideally May. ${monthsAway(moveMonth, acCheckMonth)} months away = "${distToTiming(monthsAway(moveMonth, acCheckMonth))}"
-Use this same logic for all other seasonal tasks. Never say "in October" — just use the timing bucket.
-
-TIER 1 — Include ALL of these, timing = "now":
-- Change all locks and garage codes
-- Test smoke and CO detectors, replace batteries
-- Locate and label main water, gas, and electrical shutoffs
-- Replace all HVAC air filter(s)
-- Run every faucet and check under sinks for leaks
-
-TIER 2 — Geographic (4–5 tasks, based on climate of ${city||'this location'}):
-Include seasonal tasks appropriate to this region. Use the timing calculation above to assign the right bucket.
-
-TIER 3 — Age-based (2–3 tasks, only if age is known):
-${age===null ? 'Skip — age unknown' : age < 5 ? 'New home: register appliances with manufacturers, review builder warranty terms, inspect for settling cracks' : age < 20 ? 'Mid-age home: confirm roof condition and estimated remaining life, check HVAC service history, inspect water heater age' : 'Older home: check for outdated plumbing or wiring, inspect foundation, consider sewer line scope'}
-
-TIER 4 — Amenity sections (one section per feature, 2–3 tasks each, only for detected features):
-${features.length ? features.join(', ') : 'none'}
-For amenities with seasonal tasks (pool closing, fireplace before winter), apply the timing calculation.
-
-Return ONLY valid JSON:
-{
-  "sections": [
-    {
-      "title": "section name",
-      "icon": "single emoji",
-      "items": [
-        {"title": "concise task", "description": "one specific sentence for this property", "timing": "now|soon|mid|annual"}
-      ]
-    }
-  ]
-}
-
-Be specific to this property — mention the city, climate, home age, specific systems where relevant.`;
+  const prompt = buildPrompt({ address, city, homeType, age, yearBuilt, sqft, moveMonth, moveMonthName, features, monthsAway, distToTiming });
 
   try {
     const data = await callClaude(prompt, 1800);
@@ -506,51 +449,11 @@ Be specific to this property — mention the city, climate, home age, specific s
   } catch(e) {
     console.error(e);
     setStatus(false);
-    renderOutput(getFallback(features, moveMonth), { address, city, yearBuilt, sqft, homeType, features, moveDate, customTasks });
+    renderOutput(buildFallback(features, moveMonth, monthsAway, distToTiming), { address, city, yearBuilt, sqft, homeType, features, moveDate, customTasks });
   }
 }
 
-// ── FALLBACK DATA ──────────────────────────────────────
-function getFallback(features, mm) {
-  const irrT = distToTiming(monthsAway(mm, 9));
-  const acT  = distToTiming(monthsAway(mm, 4));
-  const sections = [
-    {title:"Safety & security",icon:"🔒",items:[
-      {title:"Change all locks and garage codes",description:"Previous owners may still have access. Do this on move-in day — it's the single most important task.",timing:"now"},
-      {title:"Test smoke and CO detectors",description:"Replace all batteries and swap out any detectors older than 10 years.",timing:"now"},
-      {title:"Locate main water, gas, and electrical shutoffs",description:"Walk the property and label each one clearly. You need to know these instantly in an emergency.",timing:"now"}
-    ]},
-    {title:"Systems",icon:"🔧",items:[
-      {title:"Replace all HVAC air filters",description:"Check every air handler in the home. Set a 90-day calendar reminder to do it again.",timing:"now"},
-      {title:"Check under every sink for leaks",description:"Run each faucet and inspect inside every cabinet below. Small drips become big mold problems.",timing:"now"},
-      {title:"Schedule HVAC tune-up",description:"Annual professional service keeps the system efficient and the warranty valid.",timing:"soon"}
-    ]},
-    {title:"Seasonal prep",icon:"🍂",items:[
-      {title:"Winterize outdoor irrigation and hose bibs",description:"Blow out irrigation lines and disconnect hoses before the first hard freeze.",timing:irrT},
-      {title:"Schedule AC check before cooling season",description:"Have refrigerant levels and coil efficiency checked before peak heat.",timing:acT},
-      {title:"Clean gutters",description:"Remove debris from gutters and check that downspouts extend at least 6 feet from the foundation.",timing:distToTiming(monthsAway(mm, 9))}
-    ]}
-  ];
-  if(features.includes('Pool')) sections.push({title:"Pool & spa",icon:"🏊",items:[
-    {title:"Test and balance pool water chemistry",description:"pH 7.4–7.6, chlorine 1–3 ppm. Imbalanced water damages the shell and equipment fast.",timing:"now"},
-    {title:"Check pool safety fence and gate latch",description:"Self-closing, self-latching gates are legally required. Check all hinges and gap clearances.",timing:"now"},
-    {title:"Schedule seasonal pool close or service",description:"Plan ahead for winterization or the summer opening depending on your move-in timing.",timing:distToTiming(monthsAway(mm, 9))}
-  ]});
-  if(features.includes('Fireplace')) sections.push({title:"Fireplace & chimney",icon:"🔥",items:[
-    {title:"Schedule chimney inspection and sweep",description:"Required annually before first use. Creosote buildup is a leading cause of house fires.",timing:distToTiming(monthsAway(mm, 8))},
-    {title:"Test damper operation",description:"The damper must open and close fully. A stuck-open damper loses significant heat in winter.",timing:"now"}
-  ]});
-  return { sections };
-}
-
 // ── RENDER ─────────────────────────────────────────────
-const TIMING = {
-  now:    { label:'⚡ First 30 days', cls:'t-now' },
-  soon:   { label:'1–3 months',       cls:'t-soon' },
-  mid:    { label:'3–6 months',       cls:'t-mid' },
-  annual: { label:'Annual',           cls:'t-ann' },
-  custom: { label:'Custom',           cls:'t-cust' }
-};
 
 function renderOutput(data, props) {
   const { address, city, yearBuilt, sqft, homeType, features, moveDate, customTasks } = props;
