@@ -109,6 +109,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue);background:var(
   .sec-items{display:block!important}
   .sec-hdr{cursor:default;background:#EEF4F8!important}
   .chev{display:none}
+  #qr-strip{display:flex!important}
 }
 </style>
 </head>
@@ -244,6 +245,17 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue);background:var(
       <div class="meta-chips" id="out-meta"></div>
     </div>
     <div class="out-body" id="out-body"></div>
+
+    <!-- QR OFFER STRIP -->
+    <div id="qr-strip" style="background:#fff;border:1px solid var(--border);border-top:none;border-radius:0 0 14px 14px;padding:20px 24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+      <img id="qr-img" src="" alt="QR Code" style="width:80px;height:80px;border-radius:6px;border:1px solid var(--border);flex-shrink:0">
+      <div style="flex:1;min-width:200px">
+        <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:3px">Scan to claim a $250 handyman match</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.55">Spend $250 on any home service through HouseAccount and we'll match it — dollar for dollar. Scan the QR code or visit the link below to claim.</div>
+        <div id="qr-url" style="font-size:11px;color:var(--blue);margin-top:5px;word-break:break-all"></div>
+      </div>
+    </div>
+
     <div class="out-actions">
       <button class="btn" onclick="window.print()">🖨 Print / Save PDF</button>
       <button class="btn btn-outline" onclick="resetForm()">← New Checklist</button>
@@ -521,6 +533,12 @@ function renderOutput(data, props) {
   footer.style.cssText='padding:13px 22px;font-size:11px;color:#8AABB8;border-top:1px solid #EEF4F8;display:flex;justify-content:space-between';
   footer.innerHTML=`<span>HouseAccount · houseaccount.com</span><span>${new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'})}</span>`;
   body.appendChild(footer);
+
+  // Build agent-tagged QR code
+  const agentParam = encodeURIComponent(val('agent-name') || val('agent-brokerage') || '');
+  const offerUrl = `${location.origin}/offer.html${agentParam ? '?agent=' + agentParam : ''}`;
+  el('qr-img').src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&color=1C3A4A&data=${encodeURIComponent(offerUrl)}`;
+  el('qr-url').textContent = offerUrl;
 
   el('output').style.display='block';
   el('output').scrollIntoView({behavior:'smooth',block:'start'});
