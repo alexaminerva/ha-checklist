@@ -479,7 +479,7 @@ async function generate() {
     const jsonStr = raw.slice(raw.indexOf('{'), raw.lastIndexOf('}')+1);
     const parsed = JSON.parse(jsonStr);
     setStatus(false);
-    renderOutput(parsed, { address, city, yearBuilt, sqft, homeType, features, moveDate, customTasks });
+    renderOutput(parsed, { address, city, yearBuilt, sqft, homeType, features, moveDate, customTasks, moveMonth });
   } catch(e) {
     console.error('Generate error:', e);
     setStatus(false);
@@ -487,15 +487,15 @@ async function generate() {
     el('status-bar').innerHTML = `<span style="color:#c0392b">⚠ Using offline checklist — ${e.message}</span>`;
     el('status-bar').style.display = 'flex';
     setTimeout(() => el('status-bar').style.display = 'none', 5000);
-    renderOutput(buildFallback(features, age, moveMonth, monthsAway, distToTiming), { address, city, yearBuilt, sqft, homeType, features, moveDate, customTasks });
+    renderOutput(buildFallback(features, age, moveMonth, monthsAway, distToTiming), { address, city, yearBuilt, sqft, homeType, features, moveDate, customTasks, moveMonth });
   }
 }
 
 // ── RENDER ─────────────────────────────────────────────
 
 function renderOutput(data, props) {
-  const TIMING = getTimingDisplay();
-  const { address, city, yearBuilt, sqft, homeType, features, moveDate, customTasks } = props;
+  const { address, city, yearBuilt, sqft, homeType, features, moveDate, customTasks, moveMonth } = props;
+  const TIMING = getTimingDisplay(moveMonth);
 
   el('out-title').textContent = 'Year 1 Home Maintenance Checklist';
   el('out-addr').textContent = [address, city].filter(Boolean).join(', ') || 'Your New Home';

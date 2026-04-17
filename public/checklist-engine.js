@@ -3,11 +3,24 @@
 //  Edit checklist-config.js instead.
 // ============================================================
 
-// Builds the TIMING display object from TIMING_LABELS config
-function getTimingDisplay() {
+// Builds timing display with actual month names based on move-in month
+function getTimingDisplay(moveMonth) {
   const cls = { now: 't-now', soon: 't-soon', mid: 't-mid', annual: 't-ann', custom: 't-cust' };
+  const MO = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const m = (moveMonth !== undefined && moveMonth !== null) ? moveMonth : null;
+
+  function mo(offset) { return MO[(m + offset) % 12]; }
+
+  const labels = m !== null ? {
+    now:    mo(0),
+    soon:   `${mo(1)} – ${mo(2)}`,
+    mid:    `${mo(3)} – ${mo(5)}`,
+    annual: 'Annual',
+    custom: 'Agent\'s note',
+  } : TIMING_LABELS;
+
   const out = {};
-  for (const [key, label] of Object.entries(TIMING_LABELS)) {
+  for (const [key, label] of Object.entries(labels)) {
     out[key] = { label, cls: cls[key] || 't-ann' };
   }
   return out;
