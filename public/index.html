@@ -389,17 +389,21 @@ function getCustomTasks() {
 }
 
 // ── URL FETCH ──────────────────────────────────────────
+function withTimeout(promise, ms) {
+  return Promise.race([promise, new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))]);
+}
+
 async function fetchFromUrl() {
   const url = val('listing-url'); if(!url) return;
   setStatus(true, 'Reading listing page…');
 
   let pageText = '';
   try {
-    const r = await fetch('/api/fetch-listing', {
+    const r = await withTimeout(fetch('/api/fetch-listing', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url })
-    });
+    }), 12000);
     const d = await r.json();
     pageText = d.text || '';
   } catch(e){}
@@ -431,13 +435,13 @@ Notes:
 - Return null for any field you cannot determine — never guess sqft or year built.`;
 
   try {
-    const data = await callClaude(prompt, 600);
+    const data = await withTimeout(callClaude(prompt, 600), 15000);
+    if (data.error) throw new Error(data.error.message);
     const raw = data.content[0].text;
     const parsed = JSON.parse(raw.slice(raw.indexOf('{'), raw.lastIndexOf('}')+1));
     applyListing(parsed);
   } catch(e) {
-    console.error(e);
-    el('detect-label').textContent = 'Could not read listing — using URL details only';
+    // Timed out or failed — generate() will continue with whatever is in the form fields
   }
 }
 
