@@ -346,6 +346,7 @@ function showBanner(p) {
   el('s-sub').textContent = [p.brokerage, p.phone].filter(Boolean).join(' · ') || 'Branding saved';
   el('saved-banner').style.display = 'flex';
   el('branding-card').style.display = 'none';
+  updateSteps();
 }
 
 function editProfile() { el('saved-banner').style.display='none'; el('branding-card').style.display='block'; }
@@ -517,7 +518,7 @@ async function generate() {
   } catch(e) {
     console.error(e);
     setStatus(false);
-    renderOutput(buildFallback(features, moveMonth, monthsAway, distToTiming), { address, city, yearBuilt, sqft, homeType, features, moveDate, customTasks });
+    renderOutput(buildFallback(features, age, moveMonth, monthsAway, distToTiming), { address, city, yearBuilt, sqft, homeType, features, moveDate, customTasks });
   }
 }
 
@@ -640,15 +641,20 @@ async function callClaude(prompt, maxTokens=1000) {
 // ── STEP COMPLETION INDICATORS ─────────────────────────
 function updateSteps() {
   const hasProperty = val('address') || val('city') || val('listing-url');
-  const hasBranding = val('agent-name') || val('agent-brokerage');
+  // branding is complete if the saved banner is visible OR name/brokerage fields have values
+  const hasBranding = val('agent-name') || val('agent-brokerage') ||
+    el('saved-banner').style.display === 'flex';
 
   el('step1-num').classList.toggle('done', !!hasProperty);
   el('step1-check').classList.toggle('show', !!hasProperty);
   el('card-property').classList.toggle('complete', !!hasProperty);
 
+  // apply to whichever branding element is visible
+  const brandingEl = el('branding-card').style.display !== 'none'
+    ? el('branding-card') : el('saved-banner');
+  brandingEl.classList.toggle('complete', !!hasBranding);
   el('step2-num').classList.toggle('done', !!hasBranding);
   el('step2-check').classList.toggle('show', !!hasBranding);
-  el('branding-card').classList.toggle('complete', !!hasBranding);
 
   const allReady = hasProperty && hasBranding;
   el('card-generate').style.borderColor = allReady ? '#7DC78A' : 'var(--border)';

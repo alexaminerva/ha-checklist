@@ -3,15 +3,6 @@
 //  Edit checklist-config.js instead.
 // ============================================================
 
-// Resolves timing for seasonal tasks based on move-in month
-function resolveSeasonalTiming(timing, moveMonth, monthsAway, distToTiming) {
-  if (!timing.startsWith('seasonal:')) return timing;
-  const key = timing.replace('seasonal:', '');
-  const targetMonth = BEST_MONTH_FOR[key];
-  if (targetMonth === undefined) return 'annual';
-  return distToTiming(monthsAway(moveMonth, targetMonth - 1)); // convert 1-indexed to 0-indexed
-}
-
 // Builds the TIMING display object from TIMING_LABELS config
 function getTimingDisplay() {
   const cls = { now: 't-now', soon: 't-soon', mid: 't-mid', annual: 't-ann', custom: 't-cust' };
@@ -22,84 +13,119 @@ function getTimingDisplay() {
   return out;
 }
 
-// Converts flat BACKUP_CHECKLIST array into grouped sections for rendering
-function buildFallback(features, moveMonth, monthsAway, distToTiming) {
+// Filters BACKUP_CHECKLIST by property features and age, returns grouped sections
+function buildTaskList(features, age) {
   const sectionMap = {};
 
+  // Always-include tasks go first
+  const alwaysSection = 'Move-in Essentials';
+  for (const title of TASKS_ALWAYS_INCLUDE) {
+    if (!sectionMap[alwaysSection]) {
+      sectionMap[alwaysSection] = { title: alwaysSection, icon: '🔑', items: [] };
+    }
+    // avoid duplicating if it's also in BACKUP_CHECKLIST
+    if (!sectionMap[alwaysSection].items.find(i => i.title === title)) {
+      sectionMap[alwaysSection].items.push({ title, description: '', timing: 'now' });
+    }
+  }
+
   for (const task of BACKUP_CHECKLIST) {
+    // Skip feature-specific tasks if property doesn't have that feature
     if (task.feature && !features.includes(task.feature)) continue;
 
-    const timing = resolveSeasonalTiming(task.timing, moveMonth, monthsAway, distToTiming);
-    const key = task.section;
+    // Skip age-gated tasks that don't match
+    if (task.minAge && age !== null && age < task.minAge) continue;
+    if (task.maxAge && age !== null && age > task.maxAge) continue;
 
+    const key = task.section;
     if (!sectionMap[key]) {
       sectionMap[key] = { title: task.section, icon: task.icon, items: [] };
     }
-    sectionMap[key].items.push({ title: task.title, description: task.description, timing });
+    // Don't duplicate always-include tasks
+    if (!sectionMap[key].items.find(i => i.title === task.title)) {
+      sectionMap[key].items.push({ title: task.title, description: task.description, timing: task.timing });
+    }
   }
 
-  return { sections: Object.values(sectionMap) };
+  return Object.values(sectionMap);
 }
 
-// Builds the AI prompt from config values
+// No-AI fallback: resolves seasonal timing locally and returns final output
+function buildFallback(features, age, moveMonth, monthsAway, distToTiming) {
+  const sections = buildTaskList(features, age);
+
+  return {
+    sections: sections.map(sec => ({
+      ...sec,
+      items: sec.items.map(item => {
+        let timing = item.timing;
+        if (timing.startsWith('seasonal:')) {
+          const key = timing.replace('seasonal:', '');
+          const targetMonth = BEST_MONTH_FOR[key];
+          timing = targetMonth !== undefined
+            ? distToTiming(monthsAway(moveMonth, targetMonth - 1))
+            : 'annual';
+        }
+        return { ...item, timing };
+      })
+    }))
+  };
+}
+
+// Builds the AI prompt — Claude's ONLY job is assigning timing to the fixed task list
 function buildPrompt({ address, city, homeType, age, yearBuilt, sqft, moveMonth, moveMonthName, features, monthsAway, distToTiming }) {
-  const wm = (BEST_MONTH_FOR.winterize_irrigation || 10) - 1;
-  const gm = (BEST_MONTH_FOR.clean_gutters        || 10) - 1;
-  const am = (BEST_MONTH_FOR.ac_tune_up           ||  5) - 1;
+  const sections = buildTaskList(features, age);
 
-  const ageRule = age === null  ? 'Skip age-based tasks — year built is unknown.'
-    : age < 5   ? AGE_RULES.new_home
-    : age < 20  ? AGE_RULES.mid_age
-    : AGE_RULES.older_home;
+  // Pre-calculate seasonal timing hints for Claude
+  const hints = [];
+  for (const [key, month1indexed] of Object.entries(BEST_MONTH_FOR)) {
+    const mo = monthsAway(moveMonth, month1indexed - 1);
+    hints.push(`  ${key}: ideally month ${month1indexed}, ${mo} months from move-in = "${distToTiming(mo)}"`);
+  }
 
-  return `You are a home maintenance expert. Generate a focused Year 1 checklist: ${TOTAL_TASKS} tasks total.
+  // Flatten tasks into a numbered list for Claude
+  const taskLines = [];
+  let idx = 1;
+  for (const sec of sections) {
+    for (const item of sec.items) {
+      taskLines.push(`${idx}. [${sec.title}] ${item.title}`);
+      idx++;
+    }
+  }
+
+  return `You are a home maintenance scheduling expert. Your ONLY job is to assign a timing value to each task below based on the homeowner's location and move-in date. Do NOT add, remove, rename, or reorder any tasks.
 
 PROPERTY:
-- ${address || 'address unknown'}, ${city || 'city unknown'}
-- ${homeType}${age ? `, built ${yearBuilt} (${age} years old)` : ''}
-- ${sqft ? sqft + ' sq ft' : ''}
-- Move-in month: ${moveMonthName} (month index ${moveMonth}, 0=January)
-- Features: ${features.length ? features.join(', ') : 'standard'}
+- Address: ${address || 'unknown'}, ${city || 'unknown'}
+- Type: ${homeType}${age ? `, built ${yearBuilt} (${age} years old)` : ''}
+- Move-in month: ${moveMonthName} (index ${moveMonth}, 0=January)
 
-TIMING RULES:
-Assign each task a timing value based on the move-in month of ${moveMonthName}.
-- "now" = do in first 30 days
-- "soon" = 1–3 months from move-in
-- "mid" = 3–6 months from move-in
-- "annual" = recurring yearly task, or more than 6 months away
+TIMING VALUES:
+- "now" = first 30 days after move-in
+- "soon" = 1–3 months after move-in
+- "mid" = 3–6 months after move-in
+- "annual" = more than 6 months away, or a recurring yearly task
 
-For seasonal tasks, calculate months away from ${moveMonthName}:
-- Winterize irrigation: ideally October (month 9). ${monthsAway(moveMonth, wm)} months away = "${distToTiming(monthsAway(moveMonth, wm))}"
-- Clean gutters: ideally October. ${monthsAway(moveMonth, gm)} months away = "${distToTiming(monthsAway(moveMonth, gm))}"
-- AC tune-up: ideally May (month 4). ${monthsAway(moveMonth, am)} months away = "${distToTiming(monthsAway(moveMonth, am))}"
-Never name the calendar month in the task — just assign the timing bucket.
+SEASONAL TIMING HINTS (based on ${moveMonthName} move-in and ${city || 'this location'}'s climate):
+${hints.join('\n')}
 
-ALWAYS INCLUDE ALL OF THESE (timing = "now"):
-${TASKS_ALWAYS_INCLUDE.map(t => `- ${t}`).join('\n')}
+For seasonal tasks, use the hints above. Consider the climate of ${city || 'the property location'} — e.g. if it's a warm climate with no frost, skip winterizing tasks entirely (mark "annual"). If move-in is in summer in a cold climate, winterizing is "soon". Use your knowledge of ${city || 'this region'}'s seasons.
 
-GEOGRAPHIC TASKS (3–5 tasks based on climate of ${city || 'this location'}):
-Include seasonal tasks appropriate for this region. Calculate timing from the move-in date above.
-IMPORTANT: Only include a seasonal task if it falls within the next 9 months from move-in. If a task (like winterizing) is more than 9 months away, skip it entirely — it doesn't belong on a Year 1 checklist for this homeowner.
+Always-include tasks (items marked "Move-in Essentials") must always be "now".
 
-AGE-BASED TASKS (2–3 tasks, only if year built is known):
-${ageRule}
-
-FEATURE-SPECIFIC TASKS (one section per feature, 2–3 tasks each):
-Features present: ${features.length ? features.join(', ') : 'none'}
-For features with seasonal tasks (pool, fireplace, irrigation), calculate timing from move-in.
+TASKS TO SCHEDULE (do not change titles or sections):
+${taskLines.join('\n')}
 
 Return ONLY valid JSON, no other text:
 {
   "sections": [
     {
-      "title": "section name",
+      "title": "section name (exact match from task list)",
       "icon": "single emoji",
       "items": [
-        { "title": "short action-oriented task", "description": "one sentence specific to this property", "timing": "now|soon|mid|annual" }
+        { "title": "exact task title", "description": "one sentence about why this matters for this specific property and location", "timing": "now|soon|mid|annual" }
       ]
     }
   ]
-}
-
-Be specific — mention the city, climate, home age, and relevant systems by name.`;
+}`;
 }
