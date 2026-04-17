@@ -16,8 +16,15 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--light-bg);color
 .hero{margin-bottom:32px}
 .hero h1{font-family:'DM Serif Display',serif;font-size:30px;color:var(--navy);line-height:1.2;margin-bottom:8px}
 .hero p{font-size:15px;color:var(--muted);line-height:1.6}
-.card{background:var(--white);border-radius:14px;border:1px solid var(--border);padding:26px 30px;margin-bottom:18px}
+.card{background:var(--white);border-radius:14px;border:1px solid var(--border);padding:26px 30px;margin-bottom:18px;transition:border-color .2s,box-shadow .2s}
+.card.complete{border-color:#7DC78A;box-shadow:0 0 0 3px rgba(46,125,82,.07)}
 .card-title{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--blue);margin-bottom:18px}
+.step-hdr{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.step-num{width:26px;height:26px;border-radius:50%;background:var(--navy);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s}
+.step-num.done{background:#2E7D52}
+.step-label{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--blue);flex:1}
+.step-check{font-size:13px;color:#2E7D52;font-weight:600;opacity:0;transition:opacity .2s}
+.step-check.show{opacity:1}
 label{display:block;font-size:13px;font-weight:500;color:var(--navy);margin-bottom:6px}
 input[type="text"],input[type="url"],select,textarea{width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 13px;font-size:14px;font-family:inherit;color:var(--text);background:#FAFCFE;transition:border-color .15s;outline:none}
 input:focus,select:focus,textarea:focus{border-color:var(--blue);background:var(--white)}
@@ -136,11 +143,15 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue);background:var(
 <div class="main">
   <div class="hero">
     <h1>Year 1 Home Maintenance<br>Checklist Generator</h1>
-    <p>Paste a listing URL — we detect property details and build a time-aware checklist based on when the homeowner moves in.</p>
+    <p>Three steps — takes about a minute. Paste the listing URL, add your branding, and we'll build a personalized checklist ready to print.</p>
   </div>
 
-  <div class="card">
-    <div class="card-title">Property Details</div>
+  <div class="card" id="card-property">
+    <div class="step-hdr">
+      <div class="step-num" id="step1-num">1</div>
+      <div class="step-label">Property Details</div>
+      <div class="step-check" id="step1-check">✓ Ready</div>
+    </div>
     <div class="field">
       <label>Listing URL <span style="color:var(--muted);font-weight:400">(Redfin or Realtor.com work best — Zillow often blocks)</span></label>
       <div class="input-row">
@@ -197,7 +208,10 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue);background:var(
   </div>
 
   <div class="card">
-    <div class="card-title">Custom Tasks <span style="font-weight:400;font-size:11px;color:var(--muted);text-transform:none;letter-spacing:0">— optional additions to the checklist</span></div>
+    <div class="step-hdr">
+      <div class="step-num" style="background:var(--border);color:var(--muted)">+</div>
+      <div class="step-label" style="color:var(--muted)">Custom Tasks <span style="font-weight:400;font-size:11px;text-transform:none;letter-spacing:0">— optional</span></div>
+    </div>
     <div id="custom-list"></div>
     <button class="add-btn" onclick="addCustomRow()">+ Add a custom task</button>
   </div>
@@ -212,7 +226,11 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue);background:var(
   </div>
 
   <div class="card" id="branding-card">
-    <div class="card-title">Your Branding</div>
+    <div class="step-hdr">
+      <div class="step-num" id="step2-num">2</div>
+      <div class="step-label">Your Branding</div>
+      <div class="step-check" id="step2-check">✓ Ready</div>
+    </div>
     <div class="agent-row">
       <div>
         <div class="field"><label>Your Name</label><input type="text" id="agent-name" placeholder="e.g. Sarah Chen"></div>
@@ -235,8 +253,15 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue);background:var(
     </div>
   </div>
 
-  <div class="status-bar" id="status-bar"><div class="spin"></div><span id="status-txt">Analyzing…</span></div>
-  <button class="btn btn-gen" onclick="generate()" id="gen-btn">Generate Checklist →</button>
+  <div class="card" id="card-generate" style="border-color:var(--border)">
+    <div class="step-hdr" style="margin-bottom:14px">
+      <div class="step-num" id="step3-num">3</div>
+      <div class="step-label">Generate Checklist</div>
+    </div>
+    <div id="gen-hint" style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6">Fill in the property and your name above, then click the button — we'll build the checklist in about 15 seconds.</div>
+    <div class="status-bar" id="status-bar"><div class="spin"></div><span id="status-txt">Analyzing…</span></div>
+    <button class="btn btn-gen" onclick="generate()" id="gen-btn">Generate Checklist →</button>
+  </div>
 
   <div id="output">
     <div class="out-hdr">
@@ -431,6 +456,7 @@ function applyListing(d) {
     if (on) ct++;
   }
   if (ct > 0) { el('detect-banner').style.display='block'; el('detect-label').textContent = `${ct} feature${ct!==1?'s':''} detected`; }
+  updateSteps();
 }
 
 // ── MOVE DATE → MONTH ──────────────────────────────────
@@ -611,7 +637,39 @@ async function callClaude(prompt, maxTokens=1000) {
   return await res.json();
 }
 
-window.addEventListener('DOMContentLoaded', loadProfile);
+// ── STEP COMPLETION INDICATORS ─────────────────────────
+function updateSteps() {
+  const hasProperty = val('address') || val('city') || val('listing-url');
+  const hasBranding = val('agent-name') || val('agent-brokerage');
+
+  el('step1-num').classList.toggle('done', !!hasProperty);
+  el('step1-check').classList.toggle('show', !!hasProperty);
+  el('card-property').classList.toggle('complete', !!hasProperty);
+
+  el('step2-num').classList.toggle('done', !!hasBranding);
+  el('step2-check').classList.toggle('show', !!hasBranding);
+  el('branding-card').classList.toggle('complete', !!hasBranding);
+
+  const allReady = hasProperty && hasBranding;
+  el('card-generate').style.borderColor = allReady ? '#7DC78A' : 'var(--border)';
+  el('card-generate').style.boxShadow = allReady ? '0 0 0 3px rgba(46,125,82,.07)' : '';
+  el('step3-num').style.background = allReady ? '#2E7D52' : 'var(--navy)';
+  el('gen-hint').textContent = allReady
+    ? '✓ You\'re all set — click the button to build the checklist.'
+    : 'Fill in the property and your name above, then click the button — we\'ll build the checklist in about 15 seconds.';
+  el('gen-hint').style.color = allReady ? '#2E7D52' : 'var(--muted)';
+  el('gen-hint').style.fontWeight = allReady ? '600' : '400';
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  loadProfile();
+  // Watch all inputs for step completion
+  document.querySelectorAll('input, select, textarea').forEach(inp => {
+    inp.addEventListener('input', updateSteps);
+    inp.addEventListener('change', updateSteps);
+  });
+  updateSteps();
+});
 </script>
 </body>
 </html>
