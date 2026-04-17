@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checklist Editor — HouseAccount</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#1C3A4A;--blue:#6B9FBF;--light-bg:#EEF4F8;--white:#fff;
+  --border:#C8DBE6;--text:#1C2E38;--muted:#6B8A99;--green:#2E7D52;
+  --red:#C0392B;--gold:#F5A623;
+}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--light-bg);color:var(--text);min-height:100vh}
+
+/* TOPBAR */
+.topbar{background:var(--navy);padding:14px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.topbar-left{display:flex;align-items:center;gap:14px}
+.topbar img{height:24px}
+.topbar-title{font-size:13px;font-weight:600;color:rgba(255,255,255,.7);letter-spacing:.05em}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.btn{display:inline-flex;align-items:center;gap:7px;border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn-save{background:var(--gold);color:var(--navy)}
+.btn-save:hover{background:#d98d10}
+.btn-back{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2)}
+.btn-back:hover{background:rgba(255,255,255,.2)}
+.save-flash{font-size:12px;font-weight:600;color:var(--gold);opacity:0;transition:opacity .3s}
+.save-flash.show{opacity:1}
+
+/* LAYOUT */
+.main{max-width:860px;margin:0 auto;padding:36px 24px 80px}
+.page-intro{margin-bottom:36px}
+.page-intro h1{font-family:'DM Serif Display',serif;font-size:26px;color:var(--navy);margin-bottom:6px}
+.page-intro p{font-size:14px;color:var(--muted);line-height:1.65;max-width:600px}
+
+/* SECTION CARDS */
+.editor-section{background:var(--white);border-radius:14px;border:1px solid var(--border);margin-bottom:24px;overflow:hidden}
+.section-hdr{padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:14px}
+.section-icon{font-size:22px;line-height:1;margin-top:2px}
+.section-hdr-text h2{font-size:15px;font-weight:700;color:var(--navy);margin-bottom:3px}
+.section-hdr-text p{font-size:13px;color:var(--muted);line-height:1.55}
+.section-body{padding:20px 24px}
+
+/* TASK LIST (always-include) */
+.task-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.task-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+.task-row input{width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 13px;font-size:14px;font-family:inherit;color:var(--text);background:#FAFCFE;outline:none;transition:border-color .15s}
+.task-row input:focus{border-color:var(--blue);background:#fff}
+.rm-btn{width:34px;height:38px;border:1.5px solid var(--border);border-radius:7px;background:transparent;cursor:pointer;font-size:17px;color:var(--muted);display:flex;align-items:center;justify-content:center;transition:all .12s;flex-shrink:0}
+.rm-btn:hover{border-color:var(--red);color:var(--red);background:#FFF5F5}
+.add-btn{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--navy);background:none;border:1.5px dashed var(--border);border-radius:8px;padding:9px 18px;cursor:pointer;font-family:inherit;transition:all .12s;width:100%;justify-content:center}
+.add-btn:hover{border-color:var(--blue);color:var(--blue);background:var(--light-bg)}
+
+/* AGE RULES */
+.age-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.age-card{border:1.5px solid var(--border);border-radius:10px;overflow:hidden}
+.age-card-hdr{background:var(--light-bg);padding:10px 14px;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--navy);border-bottom:1px solid var(--border)}
+.age-card textarea{width:100%;border:none;padding:12px 14px;font-size:13px;font-family:inherit;color:var(--text);line-height:1.6;resize:vertical;min-height:130px;background:#fff;outline:none}
+.age-card textarea:focus{background:#FAFCFE}
+
+/* SEASONAL TIMING */
+.month-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.month-row{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border:1.5px solid var(--border);border-radius:10px;background:#FAFCFE}
+.month-label{font-size:13px;font-weight:500;color:var(--text)}
+.month-label small{display:block;font-size:11px;color:var(--muted);font-weight:400;margin-top:1px}
+.month-row select{border:1.5px solid var(--border);border-radius:7px;padding:7px 10px;font-size:13px;font-family:inherit;color:var(--text);background:#fff;outline:none;cursor:pointer}
+.month-row select:focus{border-color:var(--blue)}
+
+/* BACKUP CHECKLIST */
+.backup-section-block{border:1.5px solid var(--border);border-radius:10px;margin-bottom:14px;overflow:hidden}
+.backup-sec-hdr{background:var(--light-bg);padding:11px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border)}
+.backup-sec-icon{font-size:16px}
+.backup-sec-name{font-size:13px;font-weight:700;color:var(--navy);flex:1}
+.backup-sec-actions{display:flex;gap:6px}
+.sec-rm-btn{background:none;border:none;cursor:pointer;font-size:13px;color:var(--muted);padding:3px 7px;border-radius:5px;font-family:inherit;font-weight:600;transition:all .12s}
+.sec-rm-btn:hover{color:var(--red);background:#FFF5F5}
+
+.backup-tasks{padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.task-card{border:1.5px solid var(--border);border-radius:8px;overflow:hidden}
+.task-card-hdr{display:flex;align-items:center;gap:8px;padding:9px 12px;background:#FAFCFE;cursor:pointer;user-select:none;border-bottom:1px solid transparent;transition:background .12s}
+.task-card-hdr:hover{background:#EEF4F8}
+.task-card-hdr.open{border-bottom-color:var(--border)}
+.task-card-title-preview{font-size:13px;font-weight:500;color:var(--text);flex:1}
+.task-timing-badge{font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;white-space:nowrap}
+.b-now{background:#FEE2E2;color:#B91C1C}
+.b-soon{background:#EDE9FE;color:#5B21B6}
+.b-mid{background:#FEF3C7;color:#854F0B}
+.b-annual{background:#DCFCE7;color:#14532D}
+.b-seasonal{background:#E0F2FE;color:#075985}
+.task-card-body{display:none;padding:12px}
+.task-card-body.open{display:block}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.field-full{margin-bottom:10px}
+label.flabel{display:block;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--navy);margin-bottom:5px}
+input.finput,select.fselect,textarea.ftarea{width:100%;border:1.5px solid var(--border);border-radius:7px;padding:9px 12px;font-size:13px;font-family:inherit;color:var(--text);background:#fff;outline:none;transition:border-color .15s}
+input.finput:focus,select.fselect:focus,textarea.ftarea:focus{border-color:var(--blue)}
+textarea.ftarea{resize:vertical;min-height:72px;line-height:1.55}
+.task-actions{display:flex;justify-content:flex-end;margin-top:6px}
+.task-rm-btn{background:none;border:1.5px solid var(--border);border-radius:7px;padding:6px 14px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;font-family:inherit;transition:all .12s}
+.task-rm-btn:hover{border-color:var(--red);color:var(--red);background:#FFF5F5}
+
+.add-task-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:9px;font-size:12px;font-weight:600;color:var(--muted);background:none;border:1.5px dashed var(--border);border-radius:8px;cursor:pointer;font-family:inherit;transition:all .12s;margin-top:6px}
+.add-task-btn:hover{border-color:var(--blue);color:var(--blue);background:var(--light-bg)}
+.add-section-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;font-size:13px;font-weight:600;color:var(--navy);background:none;border:2px dashed var(--border);border-radius:10px;cursor:pointer;font-family:inherit;transition:all .12s;margin-top:8px}
+.add-section-btn:hover{border-color:var(--blue);color:var(--blue);background:var(--light-bg)}
+
+/* TOTAL TASKS */
+.size-row{display:flex;align-items:center;gap:16px}
+.size-row input{width:120px;border:1.5px solid var(--border);border-radius:8px;padding:10px 13px;font-size:14px;font-family:inherit;color:var(--text);outline:none;background:#FAFCFE}
+.size-row input:focus{border-color:var(--blue);background:#fff}
+.size-hint{font-size:13px;color:var(--muted);line-height:1.5}
+
+/* HOW IT WORKS CALLOUT */
+.how-it-works{background:#EEF4F8;border:1.5px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:28px}
+.how-it-works h3{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.flow-steps{display:flex;align-items:flex-start;gap:0;flex-wrap:wrap}
+.flow-step{display:flex;flex-direction:column;align-items:center;text-align:center;flex:1;min-width:120px;padding:0 8px}
+.flow-step-num{width:28px;height:28px;background:var(--navy);color:#fff;border-radius:50%;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-bottom:7px;flex-shrink:0}
+.flow-step-title{font-size:12px;font-weight:600;color:var(--navy);margin-bottom:3px}
+.flow-step-desc{font-size:11px;color:var(--muted);line-height:1.5}
+.flow-arrow{font-size:18px;color:var(--border);align-self:center;margin-top:-14px;flex-shrink:0}
+@media(max-width:640px){
+  .age-grid{grid-template-columns:1fr}
+  .month-grid{grid-template-columns:1fr}
+  .field-row{grid-template-columns:1fr}
+  .flow-arrow{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAqAAAABwCAYAAADBncLDAAB9GElEQVR4nOz955IlS5aliX3KjB3mJMKD3ojLWZLKrMzKok2qpwcNCDAyggEZEYgAPwA8Ax4AP/EKeBOIQGSme6SBblR18axKdjkL5uwQY6q68UPteETcvPdGeLgHqzxL5IhHOLGjpnZMbevea6+l2GCDDTbYYIMNNthgA0ASUEo91ffRT/XoG2ywwQYbbLDBBhts8DVsAtANNthggw022GCDDZ4pNgHoBhtssMEGG2ywwQbPFC9NAHrzzXfkyo3X5HmPY4MNNthggw022GCDs8E+7wE8CpduvC2z7S0mkwl98GTVWD7+p787yszYDTbYYIMNNthggw2eGl7YQG7n+tti84yLe5cJCBIVSim0NbRtzd07dzj66Ocv7Pg32GCDDTbYYIMNXjY8qy74Fy6Am159WyazLUbTbYqqZL6sUUYjouhjAMAYQwgB2prP/ubfv3DnsMEGG2ywwQYbbPAy4ncuAK2uviOz7R2ycoy2jl40IQrKZUQFyAN0VRUBcDEw8h23PvmQg1u/eGHOZYMNNthggw022OBlxO9MADq+8X0xRUVZjsiqEdYVeBR9GDKexiDfEoDaGMjqBbPcsTg+4qN/+A/P/Xw22GCDDTbYYIMNXlb8sw9AJ5fekHyyRb51EXEZxhjEWARLL4IPghfQxqUA9ATx5F9WPBOJuBAgelbLOQd3vmJ16582gegGG2ywwQYbbLDBKfGsAtBn3gVfXX5LZtu7jMcTVFbSiKbXmk4U4iHoQBBF1BrQhOH810Ho/emIRIGYFRweHaGJTHcukI8qbjkry8/+fhOEbrDBBhtssMEGG7yAeKZBWnX9fZlt7VKOJhhb4AGvNb1K2c4oiohCGQtKgbF474e/TplPfZIBFZSACkKZF+gY6bsVldHkTnF0+0u+/Pv/uAlCN9hggw022GCDDXgJSvAXX39XRpMp460tuig0Xui94FWGaIdyBWIMPg7d6ycBpqDxQxc7RBzCEKCqiJb75fiTPyQFn1FBGALRNPhIFntMhIglKkVU9qEgtG87itxhFfi+xUigsCZRAFYHFO0Rv/r7//JCB6F7125IXlX0USHKwBBci1b46MmcYXVwxPGXHz+z87j+9o+kCx6rFBhN4yPW5URRSIzE0HLwwUaLdYMNHgeXb74l1XjE0XKFyzNGownz+RylFL4PWGupypLY9uzfvcf83rO71zfYYIPfLbywJfjZK+9KNZ1QjsYY51gGhQ9CiAZchnOOoCxNH2nbjqIovvVYKSiVlNFUcD/bKQ/9XlSJRxpV+g0ZvmckDnxPjwYEi5aUWQ0q/cz7jphZsAYVNQQISiMxAuZrLksvJsbTbaY7O7ReiNoNLlFCXhSE2KGVENr46AOdE668+r7Mti/iURiX1Ar0qiUvqiSjFTw69Bx88PfPbEwbbPAyY2tvj6waEcsabI4tK6pqhogQfSC3jlGe0zc1jQ/M7338vIe8wQYbbHAmPHYAOrr2rky2tinHY6zL6aPQ+UAbPcZmmDwHDL1ACBG0oShsaj5SD5bTvwb1sNrng7+z5n6K4n7wqQaeJ4MOKInzeT/8WuuEpj/e2Z7hvaetl0gI5EYTQ6BpGsLimC9/8WJnPwG0K1A2J8YANsMjtJ1HK4eyGlFC0PmzG5DSaOMAoccQjaJTkczlSABlDc5lz248G2zwEmPr5pvitabvPa1xdF44WnZoY8nznKgDIXr6zmOioIuC8tLrUt/aKHpssMEGLy8eGYBu3XhPbDGiGE1xVYU2OR3Qx4jXEWNLlNZ4UfRB6GIKPp3TuKyga9pHj0I9ED6ul1TRDwWeoIaS/f0QNWKTpqhoZGATxKE8nULUwOJwH6uhzBxFVSB9z8G9Oxx/9SXc+/VLsYCL1tQ9LJtANnYELaxiQIICpciNolP60Qc6J0QUXoQuQIPHlRW96vE6o25atHjKqnpm49lgg5cZu5cuY/KSRR/JJluEAHXdU1YjVl5ABWKIKNk2hiLLR9w/KtSeTolaRbK/PkfRSiJQCJ9SjXTF5BVzNVhtE+RFcm5CiEEIYTYHIkbSS8I5g8k3YIwQ7yCH2LKKxYp7zVCrEEIYTYD4kQfT0EhDC+gAAAABJRU5ErkJggg==" alt="HouseAccount">
+    <span class="topbar-title">Checklist Editor</span>
+  </div>
+  <div class="topbar-right">
+    <span class="save-flash" id="save-flash">✓ Saved</span>
+    <a href="/" class="btn btn-back">← Back to Portal</a>
+    <button class="btn btn-save" onclick="saveAll()">Save Changes</button>
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="page-intro">
+    <h1>What goes on the checklist?</h1>
+    <p>Edit everything here — no code required. Changes save instantly and apply to every checklist you generate in the portal.</p>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <div class="how-it-works">
+    <h3>💡 How the checklist gets built</h3>
+    <div class="flow-steps">
+      <div class="flow-step">
+        <div class="flow-step-num">1</div>
+        <div class="flow-step-title">Always-include tasks</div>
+        <div class="flow-step-desc">Your core list — appears on every single checklist</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-step-num">2</div>
+        <div class="flow-step-title">Location tasks</div>
+        <div class="flow-step-desc">AI adds 4–5 tasks based on the home's climate and region</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-step-num">3</div>
+        <div class="flow-step-title">Age-based tasks</div>
+        <div class="flow-step-desc">2–3 tasks based on how old the home is</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-step-num">4</div>
+        <div class="flow-step-title">Feature tasks</div>
+        <div class="flow-step-desc">Pool, fireplace, garage etc — only if detected on the property</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-step-num">5</div>
+        <div class="flow-step-title">Timing adjusted</div>
+        <div class="flow-step-desc">Every task is timed relative to the homeowner's move-in date</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- SECTION 1: ALWAYS INCLUDE -->
+  <div class="editor-section">
+    <div class="section-hdr">
+      <div class="section-icon">📌</div>
+      <div class="section-hdr-text">
+        <h2>Tasks on every checklist</h2>
+        <p>These appear on every homeowner's checklist no matter what — regardless of property type, location, or age. All are flagged "First 30 days."</p>
+      </div>
+    </div>
+    <div class="section-body">
+      <div class="task-list" id="always-list"></div>
+      <button class="add-btn" onclick="addAlwaysTask()">+ Add a task</button>
+    </div>
+  </div>
+
+
+  <!-- SECTION 2: AGE RULES -->
+  <div class="editor-section">
+    <div class="section-hdr">
+      <div class="section-icon">🏠</div>
+      <div class="section-hdr-text">
+        <h2>Recommendations based on home age</h2>
+        <p>The AI reads this and generates 2–3 specific tasks based on how old the home is. Write in plain sentences — the AI turns them into formatted tasks.</p>
+      </div>
+    </div>
+    <div class="section-body">
+      <div class="age-grid">
+        <div class="age-card">
+          <div class="age-card-hdr">New home — under 5 years old</div>
+          <textarea id="age-new" class="ftarea" style="border:none;border-radius:0" placeholder="What should new homeowners check or do?"></textarea>
+        </div>
+        <div class="age-card">
+          <div class="age-card-hdr">Mid-age — 5 to 20 years old</div>
+          <textarea id="age-mid" class="ftarea" style="border:none;border-radius:0" placeholder="What should mid-age homeowners check or do?"></textarea>
+        </div>
+        <div class="age-card">
+          <div class="age-card-hdr">Older home — over 20 years old</div>
+          <textarea id="age-old" class="ftarea" style="border:none;border-radius:0" placeholder="What should older-home owners check or do?"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- SECTION 3: SEASONAL TIMING -->
+  <div class="editor-section">
+    <div class="section-hdr">
+      <div class="section-icon">📅</div>
+      <div class="section-hdr-text">
+        <h2>Best month for seasonal tasks</h2>
+        <p>The AI calculates timing automatically based on the homeowner's move-in date. Set the ideal calendar month for each task type here.</p>
+      </div>
+    </div>
+    <div class="section-body">
+      <div class="month-grid">
+        <div class="month-row">
+          <div class="month-label">Winterize irrigation<small>Blow out lines before first freeze</small></div>
+          <select id="month-winterize" class="fselect" style="width:auto"></select>
+        </div>
+        <div class="month-row">
+          <div class="month-label">Clean gutters<small>After leaves fall</small></div>
+          <select id="month-gutters" class="fselect" style="width:auto"></select>
+        </div>
+        <div class="month-row">
+          <div class="month-label">AC tune-up<small>Before summer heat</small></div>
+          <select id="month-ac" class="fselect" style="width:auto"></select>
+        </div>
+        <div class="month-row">
+          <div class="month-label">Chimney sweep<small>Before heating season</small></div>
+          <select id="month-chimney" class="fselect" style="width:auto"></select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- SECTION 4: CHECKLIST SIZE -->
+  <div class="editor-section">
+    <div class="section-hdr">
+      <div class="section-icon">📏</div>
+      <div class="section-hdr-text">
+        <h2>Checklist length</h2>
+        <p>How many total tasks the AI should generate. Fewer tasks = quicker to read. More tasks = more thorough. Best range is 15–25.</p>
+      </div>
+    </div>
+    <div class="section-body">
+      <div class="size-row">
+        <input type="text" id="total-tasks" class="finput" style="width:120px">
+        <span class="size-hint">tasks total &nbsp;·&nbsp; Recommended: <strong>18–22</strong></span>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- SECTION 5: BACKUP CHECKLIST -->
+  <div class="editor-section">
+    <div class="section-hdr">
+      <div class="section-icon">🔁</div>
+      <div class="section-hdr-text">
+        <h2>Backup checklist</h2>
+        <p>If the AI is unavailable, homeowners get these tasks instead. This is also a good reference for the types of tasks we include. Tasks marked with a feature tag only appear when that feature is detected on the property.</p>
+      </div>
+    </div>
+    <div class="section-body">
+      <div id="backup-sections"></div>
+      <button class="add-section-btn" onclick="addSection()">+ Add a new section</button>
+    </div>
+  </div>
+
+</div>
+
+<script src="checklist-config.js"></script>
+<script>
+
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const FEATURES = ['', 'Pool', 'Spa/Hot Tub', 'Deck or Patio', 'Fireplace', 'Basement', 'Attached Garage', 'Well Water', 'Septic System', 'Solar Panels', 'EV Charger', 'Lawn & Irrigation', 'Slate/Tile Roof'];
+const TIMING_OPTIONS = [
+  { value: 'now',    label: '⚡ First 30 days' },
+  { value: 'soon',   label: '1–3 months' },
+  { value: 'mid',    label: '3–6 months' },
+  { value: 'annual', label: 'Annual' },
+  { value: 'seasonal:winterize_irrigation', label: 'Seasonal → Winterize' },
+  { value: 'seasonal:clean_gutters',        label: 'Seasonal → Gutters' },
+  { value: 'seasonal:ac_tune_up',           label: 'Seasonal → AC tune-up' },
+  { value: 'seasonal:chimney_sweep',        label: 'Seasonal → Chimney' },
+];
+
+// ── LOAD STATE ────────────────────────────────────────────────────
+function loadState() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('ha_checklist_config') || 'null');
+    if (saved) return saved;
+  } catch(e) {}
+  return {
+    alwaysInclude: [...TASKS_ALWAYS_INCLUDE],
+    ageRules: { new_home: AGE_RULES.new_home.trim(), mid_age: AGE_RULES.mid_age.trim(), older_home: AGE_RULES.older_home.trim() },
+    bestMonthFor: { ...BEST_MONTH_FOR },
+    totalTasks: TOTAL_TASKS,
+    backupChecklist: BACKUP_CHECKLIST.map(t => ({...t})),
+  };
+}
+
+// ── RENDER: ALWAYS-INCLUDE ─────────────────────────────────────────
+function renderAlways(tasks) {
+  const list = document.getElementById('always-list');
+  list.innerHTML = '';
+  tasks.forEach((task, i) => {
+    const row = document.createElement('div');
+    row.className = 'task-row';
+    row.innerHTML = `
+      <input type="text" value="${escHtml(task)}" oninput="updateAlways(${i}, this.value)">
+      <button class="rm-btn" onclick="removeAlways(${i})" title="Remove">×</button>`;
+    list.appendChild(row);
+  });
+}
+
+// ── RENDER: BACKUP CHECKLIST ───────────────────────────────────────
+function renderBackup(tasks) {
+  const container = document.getElementById('backup-sections');
+  container.innerHTML = '';
+
+  // Group by section
+  const sections = [];
+  const sectionMap = {};
+  for (const task of tasks) {
+    if (!sectionMap[task.section]) {
+      const s = { name: task.section, icon: task.icon || '📋', tasks: [] };
+      sections.push(s);
+      sectionMap[task.section] = s;
+    }
+    sectionMap[task.section].tasks.push(task);
+  }
+
+  sections.forEach((sec, si) => {
+    const block = document.createElement('div');
+    block.className = 'backup-section-block';
+    block.innerHTML = `
+      <div class="backup-sec-hdr">
+        <span class="backup-sec-icon">${sec.icon}</span>
+        <span class="backup-sec-name">${escHtml(sec.name)}</span>
+        <div class="backup-sec-actions">
+          <button class="sec-rm-btn" onclick="removeSection('${escHtml(sec.name)}')">Remove section</button>
+        </div>
+      </div>
+      <div class="backup-tasks" id="sec-${si}"></div>
+      <div style="padding:0 12px 12px">
+        <button class="add-task-btn" onclick="addTaskToSection('${escHtml(sec.name)}', '${escHtml(sec.icon)}')">+ Add task</button>
+      </div>`;
+    container.appendChild(block);
+
+    const tasksEl = document.getElementById(`sec-${si}`);
+    sec.tasks.forEach((task, ti) => {
+      const globalIndex = tasks.indexOf(task);
+      tasksEl.appendChild(makeTaskCard(task, globalIndex));
+    });
+  });
+}
+
+function makeTaskCard(task, index) {
+  const timingBadgeCls = task.timing.startsWith('seasonal') ? 'b-seasonal' : `b-${task.timing}`;
+  const timingLabel = TIMING_OPTIONS.find(o => o.value === task.timing)?.label || task.timing;
+
+  const card = document.createElement('div');
+  card.className = 'task-card';
+  card.id = `task-card-${index}`;
+
+  const hdr = document.createElement('div');
+  hdr.className = 'task-card-hdr';
+  hdr.innerHTML = `
+    <span class="task-card-title-preview">${escHtml(task.title)}</span>
+    <span class="task-timing-badge ${timingBadgeCls}">${timingLabel}</span>
+    <span style="font-size:11px;color:var(--muted);margin-left:6px">▼</span>`;
+  hdr.addEventListener('click', () => {
+    body.classList.toggle('open');
+    hdr.classList.toggle('open');
+    const chev = hdr.querySelector('span:last-child');
+    chev.textContent = body.classList.contains('open') ? '▲' : '▼';
+  });
+
+  const featureOpts = FEATURES.map(f => `<option value="${f}" ${task.feature === f ? 'selected' : ''}>${f || '— All homes —'}</option>`).join('');
+  const timingOpts = TIMING_OPTIONS.map(o => `<option value="${o.value}" ${task.timing === o.value ? 'selected' : ''}>${o.label}</option>`).join('');
+
+  const body = document.createElement('div');
+  body.className = 'task-card-body';
+  body.innerHTML = `
+    <div class="field-full">
+      <label class="flabel">Task title</label>
+      <input class="finput" value="${escHtml(task.title)}" oninput="updateTask(${index},'title',this.value); this.closest('.task-card').querySelector('.task-card-title-preview').textContent=this.value">
+    </div>
+    <div class="field-full">
+      <label class="flabel">Description <span style="font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">— one sentence explaining why this matters</span></label>
+      <textarea class="ftarea" oninput="updateTask(${index},'description',this.value)">${escHtml(task.description || '')}</textarea>
+    </div>
+    <div class="field-row">
+      <div>
+        <label class="flabel">When to do it</label>
+        <select class="fselect" onchange="updateTask(${index},'timing',this.value); refreshTimingBadge(${index},this.value)">${timingOpts}</select>
+      </div>
+      <div>
+        <label class="flabel">Only show if home has… <span style="font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">(optional)</span></label>
+        <select class="fselect" onchange="updateTask(${index},'feature',this.value)">${featureOpts}</select>
+      </div>
+    </div>
+    <div class="task-actions">
+      <button class="task-rm-btn" onclick="removeTask(${index})">Remove task</button>
+    </div>`;
+
+  card.appendChild(hdr);
+  card.appendChild(body);
+  return card;
+}
+
+function refreshTimingBadge(index, timing) {
+  const card = document.getElementById(`task-card-${index}`);
+  if (!card) return;
+  const badge = card.querySelector('.task-timing-badge');
+  const cls = timing.startsWith('seasonal') ? 'b-seasonal' : `b-${timing}`;
+  badge.className = `task-timing-badge ${cls}`;
+  badge.textContent = TIMING_OPTIONS.find(o => o.value === timing)?.label || timing;
+}
+
+// ── POPULATE MONTH SELECTS ─────────────────────────────────────────
+function populateMonthSelects(state) {
+  ['winterize','gutters','ac','chimney'].forEach(key => {
+    const sel = document.getElementById(`month-${key}`);
+    sel.innerHTML = MONTHS.map((m, i) => `<option value="${i+1}">${m}</option>`).join('');
+  });
+  const bm = state.bestMonthFor;
+  document.getElementById('month-winterize').value = bm.winterize_irrigation;
+  document.getElementById('month-gutters').value   = bm.clean_gutters;
+  document.getElementById('month-ac').value        = bm.ac_tune_up;
+  document.getElementById('month-chimney').value   = bm.chimney_sweep;
+}
+
+// ── MUTATIONS ─────────────────────────────────────────────────────
+let state;
+
+function updateAlways(i, val) { state.alwaysInclude[i] = val; }
+function removeAlways(i) { state.alwaysInclude.splice(i,1); renderAlways(state.alwaysInclude); }
+function addAlwaysTask() {
+  state.alwaysInclude.push('New task');
+  renderAlways(state.alwaysInclude);
+  const inputs = document.querySelectorAll('#always-list input');
+  const last = inputs[inputs.length-1];
+  last.focus(); last.select();
+}
+
+function updateTask(i, field, val) {
+  if (val === '' && field === 'feature') val = undefined;
+  state.backupChecklist[i][field] = val || undefined;
+}
+function removeTask(i) {
+  state.backupChecklist.splice(i,1);
+  renderBackup(state.backupChecklist);
+}
+function addTaskToSection(sectionName, icon) {
+  state.backupChecklist.push({
+    section: sectionName, icon,
+    title: 'New task',
+    description: '',
+    timing: 'now',
+  });
+  renderBackup(state.backupChecklist);
+  // Open the new card
+  const cards = document.querySelectorAll('.task-card');
+  const last = cards[cards.length-1];
+  if (last) {
+    last.querySelector('.task-card-hdr').click();
+    last.querySelector('.finput').focus();
+    last.scrollIntoView({ behavior:'smooth', block:'center' });
+  }
+}
+function removeSection(name) {
+  if (!confirm(`Remove the entire "${name}" section and all its tasks?`)) return;
+  state.backupChecklist = state.backupChecklist.filter(t => t.section !== name);
+  renderBackup(state.backupChecklist);
+}
+function addSection() {
+  const name = prompt('Section name (e.g. "Basement", "Solar Panels"):');
+  if (!name) return;
+  const icon = prompt('Emoji icon for this section (e.g. 🏗 or ☀️):') || '📋';
+  state.backupChecklist.push({
+    section: name, icon,
+    title: 'New task',
+    description: '',
+    timing: 'now',
+  });
+  renderBackup(state.backupChecklist);
+}
+
+// ── SAVE ──────────────────────────────────────────────────────────
+function saveAll() {
+  state.ageRules = {
+    new_home:   document.getElementById('age-new').value,
+    mid_age:    document.getElementById('age-mid').value,
+    older_home: document.getElementById('age-old').value,
+  };
+  state.bestMonthFor = {
+    winterize_irrigation: parseInt(document.getElementById('month-winterize').value),
+    clean_gutters:        parseInt(document.getElementById('month-gutters').value),
+    ac_tune_up:           parseInt(document.getElementById('month-ac').value),
+    chimney_sweep:        parseInt(document.getElementById('month-chimney').value),
+  };
+  state.totalTasks = document.getElementById('total-tasks').value;
+
+  localStorage.setItem('ha_checklist_config', JSON.stringify(state));
+
+  const flash = document.getElementById('save-flash');
+  flash.classList.add('show');
+  setTimeout(() => flash.classList.remove('show'), 2500);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  state = loadState();
+  renderAlways(state.alwaysInclude);
+  document.getElementById('age-new').value = state.ageRules.new_home;
+  document.getElementById('age-mid').value = state.ageRules.mid_age;
+  document.getElementById('age-old').value = state.ageRules.older_home;
+  populateMonthSelects(state);
+  document.getElementById('total-tasks').value = state.totalTasks;
+  renderBackup(state.backupChecklist);
+});
+</script>
+</body>
+</html>

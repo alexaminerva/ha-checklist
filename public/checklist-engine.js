@@ -77,8 +77,9 @@ Never name the calendar month in the task — just assign the timing bucket.
 ALWAYS INCLUDE ALL OF THESE (timing = "now"):
 ${TASKS_ALWAYS_INCLUDE.map(t => `- ${t}`).join('\n')}
 
-GEOGRAPHIC TASKS (4–5 tasks based on climate of ${city || 'this location'}):
+GEOGRAPHIC TASKS (3–5 tasks based on climate of ${city || 'this location'}):
 Include seasonal tasks appropriate for this region. Calculate timing from the move-in date above.
+IMPORTANT: Only include a seasonal task if it falls within the next 9 months from move-in. If a task (like winterizing) is more than 9 months away, skip it entirely — it doesn't belong on a Year 1 checklist for this homeowner.
 
 AGE-BASED TASKS (2–3 tasks, only if year built is known):
 ${ageRule}
