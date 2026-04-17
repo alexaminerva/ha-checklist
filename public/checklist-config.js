@@ -84,6 +84,19 @@ const BACKUP_CHECKLIST = [
   { section: "Garage", icon: "🚗", title: "Test garage door auto-reverse safety feature", description: "Place a 2x4 flat under the door — it must reverse on contact. If it doesn't, call a technician immediately.", timing: "now", feature: "Attached Garage" },
   { section: "Garage", icon: "🚗", title: "Lubricate garage door rollers and hinges", description: "Apply silicone spray annually to prevent wear, noise, and premature failure.", timing: "annual", feature: "Attached Garage" },
 
+  // ── New Home (under 5 years) ──
+  { section: "New Construction", icon: "🏗", title: "Complete your builder warranty walkthrough", description: "Most workmanship warranties expire at year 1 — schedule a walkthrough with your builder before it lapses.", timing: "now", maxAge: 4 },
+  { section: "New Construction", icon: "🏗", title: "Check for settling cracks in drywall and door frames", description: "Minor settling is normal in new construction — document any cracks now so you can track if they grow.", timing: "now", maxAge: 4 },
+  { section: "New Construction", icon: "🏗", title: "Confirm all builder punch list items were completed", description: "Review your closing punch list and follow up on any outstanding items before your warranty window closes.", timing: "now", maxAge: 4 },
+
+  // ── Mid-Age Home (5–20 years) ──
+  { section: "Home Systems Review", icon: "🔧", title: "Check HVAC system age and plan ahead", description: "If the system is original to the home, it may be approaching the end of its lifespan — get it inspected and budget accordingly.", timing: "soon", minAge: 5, maxAge: 20 },
+  { section: "Home Systems Review", icon: "🔧", title: "Assess roof age and condition", description: "15–20 year asphalt shingles are nearing end of life in many climates — a roofer can tell you how many years you have left.", timing: "soon", minAge: 5, maxAge: 20 },
+  { section: "Home Systems Review", icon: "🔧", title: "Recaulk tubs, showers, and windows", description: "Caulk typically fails around year 7–10 — resealing now prevents water intrusion and mold behind walls.", timing: "soon", minAge: 5, maxAge: 20 },
+
+  // ── Older Home (over 20 years) ──
+  { section: "Older Home Priorities", icon: "🔩", title: "Inspect plumbing for galvanized pipes", description: "Homes built before 2000 may have galvanized steel pipes that corrode over time, causing low pressure and rust-colored water.", timing: "soon", minAge: 21 },
+
   // ── Deck & Patio ──
   { section: "Deck & Patio", icon: "🪵", title: "Inspect deck boards and railings", description: "Check for soft spots, rot, and loose railings — especially important on older wood decks.", timing: "soon", feature: "Deck or Patio" },
   { section: "Deck & Patio", icon: "🪵", title: "Seal or stain the deck", description: "Apply a fresh coat of sealant or stain to protect against moisture and UV damage.", timing: "soon", feature: "Deck or Patio" },
