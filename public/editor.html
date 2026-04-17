@@ -90,6 +90,8 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--light-bg);color
 .b-seasonal{background:#E0F2FE;color:#075985}
 .task-card-body{display:none;padding:12px}
 .task-card-body.open{display:block}
+.task-del-btn{background:none;border:1px solid var(--border);border-radius:5px;width:22px;height:22px;font-size:14px;cursor:pointer;color:var(--muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:6px;line-height:1;transition:all .12s}
+.task-del-btn:hover{border-color:var(--red);color:var(--red);background:#fff5f5}
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
 .field-full{margin-bottom:10px}
 label.flabel{display:block;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--navy);margin-bottom:5px}
@@ -397,11 +399,12 @@ function makeTaskCard(task, index) {
   hdr.innerHTML = `
     <span class="task-card-title-preview">${escHtml(task.title)}</span>
     <span class="task-timing-badge ${timingBadgeCls}">${timingLabel}</span>
-    <span style="font-size:11px;color:var(--muted);margin-left:6px">▼</span>`;
+    <span style="font-size:11px;color:var(--muted);margin-left:6px">▼</span>
+    <button class="task-del-btn" title="Delete task" onclick="event.stopPropagation();removeTask(${index})">×</button>`;
   hdr.addEventListener('click', () => {
     body.classList.toggle('open');
     hdr.classList.toggle('open');
-    const chev = hdr.querySelector('span:last-child');
+    const chev = hdr.querySelector('.task-del-btn').previousElementSibling;
     chev.textContent = body.classList.contains('open') ? '▲' : '▼';
   });
 

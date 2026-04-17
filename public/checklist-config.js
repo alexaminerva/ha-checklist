@@ -43,43 +43,51 @@ const TIMING_LABELS = {
 // feature: only show this task if the property has this feature (e.g. "Pool")
 
 const BACKUP_CHECKLIST = [
+
   // ── Move-in Essentials ──
   { section: "Move-in Essentials", icon: "🔑", title: "Change all locks and garage codes", description: "Replace or rekey every exterior lock — you don't know who has copies of the old keys.", timing: "now" },
-  { section: "Move-in Essentials", icon: "🔑", title: "Test smoke and CO detectors", description: "Test every unit and replace batteries. Replace any detector older than 10 years.", timing: "now" },
-  { section: "Move-in Essentials", icon: "🔑", title: "Locate main water, gas, and electrical shutoffs", description: "Know where these are before you need them in an emergency.", timing: "now" },
-  { section: "Move-in Essentials", icon: "🔑", title: "Replace HVAC filters", description: "Start fresh and set a calendar reminder to replace every 3 months.", timing: "now" },
+  { section: "Move-in Essentials", icon: "🔑", title: "Test smoke and CO detectors", description: "Test every unit, replace batteries, and replace any detector older than 10 years.", timing: "now" },
+  { section: "Move-in Essentials", icon: "🔑", title: "Replace HVAC filters", description: "Start fresh and set a recurring calendar reminder to replace every 3 months.", timing: "now" },
+  { section: "Move-in Essentials", icon: "🔑", title: "Label the electrical panel", description: "Go room by room and label every breaker — saves time and stress during any outage.", timing: "now" },
+  { section: "Move-in Essentials", icon: "🔑", title: "Locate main water and gas shutoffs", description: "Know exactly where these are before you ever need them in an emergency.", timing: "now" },
+  { section: "Move-in Essentials", icon: "🔑", title: "Register all appliances and locate warranties", description: "Register with manufacturers for warranty coverage and recall notifications.", timing: "now" },
 
-  // ── HVAC & Air Quality ──
-  { section: "HVAC & Air Quality", icon: "❄️", title: "Schedule AC tune-up", description: "Have an HVAC tech clean coils, check refrigerant, and inspect the system before peak cooling season.", timing: "seasonal:ac_tune_up" },
-  { section: "HVAC & Air Quality", icon: "❄️", title: "Clean dryer vent", description: "A clogged dryer vent is a leading cause of house fires. Have it professionally cleaned.", timing: "soon" },
-  { section: "HVAC & Air Quality", icon: "❄️", title: "Check attic insulation and ventilation", description: "Proper insulation and airflow reduce energy bills and prevent ice dams in cold climates.", timing: "mid" },
+  // ── HVAC ──
+  { section: "HVAC", icon: "❄️", title: "Schedule furnace or heating system tune-up", description: "Have a tech inspect the heat exchanger, clean burners, and check for carbon monoxide leaks before heating season.", timing: "seasonal:chimney_sweep" },
+  { section: "HVAC", icon: "❄️", title: "Schedule AC tune-up", description: "Clean coils, check refrigerant, and test the system before peak cooling season.", timing: "seasonal:ac_tune_up" },
+  { section: "HVAC", icon: "❄️", title: "Clean dryer vent", description: "A clogged dryer vent is a leading cause of house fires — have it professionally cleaned once a year.", timing: "annual" },
 
   // ── Exterior & Roof ──
-  { section: "Exterior & Roof", icon: "🏠", title: "Inspect roof condition", description: "Look for missing or curling shingles, damaged flashing, and signs of moss or algae.", timing: "soon" },
-  { section: "Exterior & Roof", icon: "🏠", title: "Clean gutters and downspouts", description: "Remove leaves and debris to prevent water damage to fascia and foundation.", timing: "seasonal:clean_gutters" },
-  { section: "Exterior & Roof", icon: "🏠", title: "Check caulking around windows and doors", description: "Recaulk any gaps to prevent drafts and water intrusion.", timing: "mid" },
-  { section: "Exterior & Roof", icon: "🏠", title: "Inspect driveway and walkways", description: "Seal cracks in concrete or asphalt before winter freeze-thaw cycles make them worse.", timing: "annual" },
+  { section: "Exterior & Roof", icon: "🏠", title: "Get a professional roof inspection", description: "A licensed roofer can spot issues invisible from the ground — especially important in the first year of ownership.", timing: "soon" },
+  { section: "Exterior & Roof", icon: "🏠", title: "Clean gutters and downspouts", description: "Clear debris to prevent water damage to the fascia, siding, and foundation.", timing: "seasonal:clean_gutters" },
+  { section: "Exterior & Roof", icon: "🏠", title: "Check grading and drainage around foundation", description: "Soil should slope away from the house. Poor drainage is the #1 cause of basement water issues.", timing: "soon" },
+  { section: "Exterior & Roof", icon: "🏠", title: "Seal driveway cracks", description: "Fill cracks before winter — freeze-thaw cycles turn small cracks into major repairs fast.", timing: "seasonal:clean_gutters" },
 
   // ── Plumbing ──
-  { section: "Plumbing", icon: "💧", title: "Check water heater age and condition", description: "Water heaters last 10–12 years. If yours is older, budget for a replacement soon.", timing: "now" },
-  { section: "Plumbing", icon: "💧", title: "Test all faucets and toilets for leaks", description: "Check supply lines and shutoff valves under every sink and behind toilets.", timing: "now" },
-  { section: "Plumbing", icon: "💧", title: "Flush water heater", description: "Drain a few gallons to remove sediment buildup and extend the unit's life.", timing: "annual" },
+  { section: "Plumbing", icon: "💧", title: "Check water heater age", description: "Water heaters last 10–12 years. If yours is approaching that, budget for a replacement this year.", timing: "now" },
+  { section: "Plumbing", icon: "💧", title: "Test toilets and under-sink supply lines for leaks", description: "Slow leaks cause mold and structural damage — a 5-minute check now prevents expensive repairs later.", timing: "now" },
+  { section: "Plumbing", icon: "💧", title: "Test all GFCI outlets", description: "Press the test/reset button on every GFCI in bathrooms, kitchen, garage, and exterior. Replace any that don't trip.", timing: "now" },
 
   // ── Lawn & Irrigation ──
-  { section: "Lawn & Irrigation", icon: "🌱", title: "Winterize irrigation system", description: "Blow out irrigation lines before the first freeze to prevent burst pipes.", timing: "seasonal:winterize_irrigation", feature: "Lawn & Irrigation" },
-  { section: "Lawn & Irrigation", icon: "🌱", title: "Spring irrigation startup", description: "Turn on the system, test each zone, and check for heads damaged over winter.", timing: "soon", feature: "Lawn & Irrigation" },
+  { section: "Lawn & Irrigation", icon: "🌱", title: "Winterize irrigation system", description: "Blow out irrigation lines before the first freeze to prevent costly burst pipes.", timing: "seasonal:winterize_irrigation", feature: "Lawn & Irrigation" },
+  { section: "Lawn & Irrigation", icon: "🌱", title: "Spring irrigation startup and zone check", description: "Turn on the system, run every zone, and replace any heads damaged over winter.", timing: "soon", feature: "Lawn & Irrigation" },
 
   // ── Pool & Spa ──
-  { section: "Pool & Spa", icon: "🏊", title: "Open and balance pool chemistry", description: "Test pH, alkalinity, and sanitizer levels. Shock the pool if needed before swim season.", timing: "soon", feature: "Pool" },
-  { section: "Pool & Spa", icon: "🏊", title: "Winterize pool", description: "Lower water level, add winterizing chemicals, and cover the pool before temperatures drop.", timing: "seasonal:winterize_irrigation", feature: "Pool" },
+  { section: "Pool & Spa", icon: "🏊", title: "Open pool and balance water chemistry", description: "Test and adjust pH, alkalinity, and sanitizer before swim season begins.", timing: "soon", feature: "Pool" },
+  { section: "Pool & Spa", icon: "🏊", title: "Winterize pool", description: "Lower water level, add winterizing chemicals, and cover before temperatures drop.", timing: "seasonal:winterize_irrigation", feature: "Pool" },
 
   // ── Fireplace & Chimney ──
-  { section: "Fireplace & Chimney", icon: "🔥", title: "Schedule chimney sweep and inspection", description: "Have a certified chimney sweep clean and inspect before your first fire of the season.", timing: "seasonal:chimney_sweep", feature: "Fireplace" },
-  { section: "Fireplace & Chimney", icon: "🔥", title: "Check damper operation", description: "Open and close the damper to make sure it seals fully and operates smoothly.", timing: "now", feature: "Fireplace" },
+  { section: "Fireplace & Chimney", icon: "🔥", title: "Schedule chimney sweep before first use", description: "Creosote buildup is a fire hazard — a certified sweep cleans and inspects before heating season.", timing: "seasonal:chimney_sweep", feature: "Fireplace" },
+  { section: "Fireplace & Chimney", icon: "🔥", title: "Test damper and check for drafts", description: "Open and close the damper fully — a leaky damper wastes heat all winter.", timing: "now", feature: "Fireplace" },
 
   // ── Garage ──
-  { section: "Garage", icon: "🚗", title: "Test garage door auto-reverse", description: "Place a 2x4 flat on the ground under the door. It should reverse on contact — if not, adjust the force or call a tech.", timing: "now", feature: "Attached Garage" },
-  { section: "Garage", icon: "🚗", title: "Lubricate garage door hardware", description: "Apply silicone spray to rollers, hinges, and tracks annually to prevent wear and noise.", timing: "annual", feature: "Attached Garage" },
+  { section: "Garage", icon: "🚗", title: "Test garage door auto-reverse safety feature", description: "Place a 2x4 flat under the door — it must reverse on contact. If it doesn't, call a technician immediately.", timing: "now", feature: "Attached Garage" },
+  { section: "Garage", icon: "🚗", title: "Lubricate garage door rollers and hinges", description: "Apply silicone spray annually to prevent wear, noise, and premature failure.", timing: "annual", feature: "Attached Garage" },
+
+  // ── Deck & Patio ──
+  { section: "Deck & Patio", icon: "🪵", title: "Inspect deck boards and railings", description: "Check for soft spots, rot, and loose railings — especially important on older wood decks.", timing: "soon", feature: "Deck or Patio" },
+  { section: "Deck & Patio", icon: "🪵", title: "Seal or stain the deck", description: "Apply a fresh coat of sealant or stain to protect against moisture and UV damage.", timing: "soon", feature: "Deck or Patio" },
+
 ];
 
 // ── APPLY SAVED EDITOR CHANGES ────────────────────────────────────────
