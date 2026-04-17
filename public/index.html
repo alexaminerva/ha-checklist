@@ -403,7 +403,8 @@ function parseAddressFromUrl(url) {
         const street = parts.slice(0, stateIdx - 1).join(' ').replace(/-/g, ' ');
         const city = parts[stateIdx - 1].replace(/-/g, ' ');
         const state = parts[stateIdx].toUpperCase();
-        return { address: toTitleCase(street), city: `${toTitleCase(city)}, ${state}` };
+        const zip = /^\d{5}$/.test(parts[stateIdx + 1] || '') ? parts[stateIdx + 1] : '';
+        return { address: toTitleCase(street), city: `${toTitleCase(city)}, ${state}${zip ? ' ' + zip : ''}` };
       }
     }
 
@@ -412,8 +413,10 @@ function parseAddressFromUrl(url) {
     if (redfinMatch) {
       const state = redfinMatch[1];
       const city = redfinMatch[2].replace(/-/g, ' ');
+      const zipMatch = redfinMatch[3].match(/-(\d{5})$/);
+      const zip = zipMatch ? zipMatch[1] : '';
       const streetRaw = redfinMatch[3].replace(/-\d{5}$/, '').replace(/-/g, ' ');
-      return { address: toTitleCase(streetRaw), city: `${toTitleCase(city)}, ${state}` };
+      return { address: toTitleCase(streetRaw), city: `${toTitleCase(city)}, ${state}${zip ? ' ' + zip : ''}` };
     }
 
     // Zillow: /homedetails/11-Turner-Dr-Greenwich-CT-06831/...
@@ -422,13 +425,11 @@ function parseAddressFromUrl(url) {
       const parts = zillowMatch[1].split('-');
       const stateIdx = parts.findIndex(p => STATE_ABBRS.includes(p.toUpperCase()));
       if (stateIdx >= 2) {
-        const zipIdx = stateIdx + 1;
-        const cityEnd = stateIdx - 1;
-        // heuristic: last word before state is city, everything before is street
-        const street = parts.slice(0, cityEnd).join(' ');
-        const city = parts[cityEnd];
+        const zip = /^\d{5}$/.test(parts[stateIdx + 1] || '') ? parts[stateIdx + 1] : '';
+        const street = parts.slice(0, stateIdx - 1).join(' ');
+        const city = parts[stateIdx - 1];
         const state = parts[stateIdx].toUpperCase();
-        return { address: toTitleCase(street), city: `${toTitleCase(city)}, ${state}` };
+        return { address: toTitleCase(street), city: `${toTitleCase(city)}, ${state}${zip ? ' ' + zip : ''}` };
       }
     }
   } catch(e) {}
@@ -749,14 +750,21 @@ window.addEventListener('DOMContentLoaded', () => {
     inp.addEventListener('input', updateSteps);
     inp.addEventListener('change', updateSteps);
   });
-  // Auto-fill address/city instantly when a listing URL is pasted
+  // Auto-fill address/city instantly on URL paste, then auto-trigger Pull Details
+  let urlDebounce = null;
   el('listing-url').addEventListener('input', () => {
     const url = val('listing-url');
+    // Instant fill from slug
     const parsed = parseAddressFromUrl(url);
     if (parsed) {
       if (parsed.address && !val('address')) el('address').value = parsed.address;
       if (parsed.city    && !val('city'))    el('city').value    = parsed.city;
       updateSteps();
+    }
+    // Auto-trigger full extraction after 800ms of no typing
+    clearTimeout(urlDebounce);
+    if (url.includes('redfin.com') || url.includes('realtor.com') || url.includes('zillow.com')) {
+      urlDebounce = setTimeout(() => fetchFromUrl(), 800);
     }
   });
   updateSteps();
