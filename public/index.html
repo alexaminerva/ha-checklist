@@ -119,14 +119,22 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue);background:var(
 .add-chk-btn:hover{color:var(--blue);background:var(--light-bg)}
 .out-actions{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
 @media print{
-  body{background:#fff}
+  @page{margin:.5in}
+  html,body{overflow:hidden;background:#fff}
   .topbar,.hero,.card,.out-actions,.status-bar{display:none!important}
   .chk-controls,.add-chk-btn{display:none!important}
-  #output{display:block!important}
+  iframe,#netlify-identity-widget,[data-netlify-deploy-id]{display:none!important}
+  *[style*="position:fixed"],*[style*="position: fixed"]{display:none!important}
+  #output{display:block!important;margin-top:0}
+  .main{padding:0;max-width:100%}
   .sec-items{display:block!important}
-  .sec-hdr{cursor:default;background:#EEF4F8!important}
+  .sec-block{page-break-inside:avoid}
+  .sec-hdr{cursor:default;background:#EEF4F8!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .out-hdr{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .chev{display:none}
   #qr-strip{display:flex!important}
+  #qr-url{display:none}
+  .out-body{border-radius:0}
 }
 </style>
 </head>
@@ -301,6 +309,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue);background:var(
 
 <script src="checklist-config.js"></script>
 <script src="checklist-engine.js"></script>
+<script>const HA_LOGO_SRC = document.querySelector('.topbar img').src;</script>
 <script>
 const PKEY = 'ha_agent_v2';
 let agentLogo = null;
@@ -611,9 +620,7 @@ function renderOutput(data, props) {
   const aName = val('agent-name'), aBrok = val('agent-brokerage'), aPhone = val('agent-phone');
   if (aName||aBrok||aPhone) el('out-agent').innerHTML = [aName?`<strong>${aName}</strong>`:null, aBrok, aPhone].filter(Boolean).join('<br>');
   if (agentLogo) { el('out-logo').src=agentLogo; el('out-logo').style.display='block'; }
-  // Use the topbar logo (base64 inline) so it renders correctly in print/PDF
-  const topbarLogo = document.querySelector('.topbar img');
-  if (topbarLogo) el('ha-mark-logo').src = topbarLogo.src;
+  el('ha-mark-logo').src = HA_LOGO_SRC;
 
   const body = el('out-body'); body.innerHTML='';
 
